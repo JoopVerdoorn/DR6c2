@@ -23,8 +23,10 @@ class CiqView extends DatarunpremiumView {
         }
 	}
 
+
 	function onUpdate(dc) {
 		DatarunpremiumView.onUpdate(dc);
+		uMilClockAltern=0;
 		
     	//! Setup back- and foregroundcolours
 		mColourFont = (getBackgroundColor() == Graphics.COLOR_BLACK) ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK; 
@@ -56,7 +58,7 @@ class CiqView extends DatarunpremiumView {
         } else if ( fieldformat.equals("2decimal" ) == true ) {
             Temp = Math.round(fieldvalue*100)/100;
             var fString = "%.2f";
-            if (counter ==4) {
+            if (counter == 4) {
    	      		if (Temp > 9.99999) {
     	         	fString = "%.1f";
         	    }
@@ -94,14 +96,10 @@ class CiqView extends DatarunpremiumView {
 	    		if (fieldvalue > 3599) {
             		var fTimerHours = (fieldvalue / 3600).format("%d");
             		xx = xms;
-            		dc.drawText(xh, yh, Graphics.FONT_NUMBER_MILD, fTimerHours, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
+            		dc.drawText(xh, yh, Graphics.FONT_LARGE, fTimerHours, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
             		fTimer = (fieldvalue / 60 % 60).format("%02d") + ":" + fTimerSecs;  
         		}
-        		if ( counter == 3) {
-        			dc.drawText(xx, y, Graphics.FONT_NUMBER_HOT, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-        		} else {	
-        			dc.drawText(xx, y, Graphics.FONT_NUMBER_MEDIUM, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-        		}	
+        		dc.drawText(xx, y, Graphics.FONT_NUMBER_MEDIUM, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);	
         	}
         } else {
  			if ( counter == 3) {
@@ -116,7 +114,7 @@ class CiqView extends DatarunpremiumView {
        		dc.drawText(xl, yl-36, Graphics.FONT_XTINY,  fieldlabel.substring(0,1) , Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
        		dc.drawText(xl, yl-18, Graphics.FONT_XTINY,  fieldlabel.substring(1,2), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
        		dc.drawText(xl, yl, Graphics.FONT_XTINY,  fieldlabel.substring(2,3), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-       	} 
+       	}               
         mColourFont = originalFontcolor;
 		dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
     }

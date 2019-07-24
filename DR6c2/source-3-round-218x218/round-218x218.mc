@@ -1,8 +1,11 @@
 using Toybox.Graphics as Gfx;
+using Toybox.System as Sys;
 
 //! inherit from the view that contains the commonlogic
 class DeviceView extends PowerView {
-
+	var myTime;
+	var strTime;
+	
 	//! it's good practice to always have an initialize, make sure to call your parent class here!
     function initialize() {
         PowerView.initialize();
@@ -42,12 +45,12 @@ class DeviceView extends PowerView {
         dc.drawLine(109, 142, 109, 202);
 
 		//! Display metrics
-		dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
- 		
+        dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
+
+		myTime = Toybox.System.getClockTime(); 
+    	strTime = myTime.hour.format("%02d") + ":" + myTime.min.format("%02d"); 		
 		//! Show clock with current time in top
 		if (uMilClockAltern == 0) {	
-			var myTime = Toybox.System.getClockTime(); 
-	   		var strTime = myTime.hour.format("%02d") + ":" + myTime.min.format("%02d");
 			dc.drawText(108, -4, Graphics.FONT_MEDIUM, strTime, Graphics.TEXT_JUSTIFY_CENTER);
 		}
 	
@@ -67,7 +70,16 @@ class DeviceView extends PowerView {
        		}        	
 		}
 
+		if (jTimertime == 0) {
+	    	if (ID0 != 3624 and ID0 != 3588 and ID0 != 3762 and ID0 != 3761 and ID0 != 3757 and ID0 != 3758 and ID0 != 3759) {
+		    	dc.setColor(Graphics.COLOR_RED, Graphics.COLOR_TRANSPARENT);
+				dc.drawText(109, 150, Graphics.FONT_MEDIUM, strTime, Graphics.TEXT_JUSTIFY_CENTER);
+		    }
+		}
+
 		//! Bottom battery indicator
+	 	var stats = Sys.getSystemStats();
+		var pwr = stats.battery;
 		var mBattcolor = (pwr > 15) ? mColourFont : Graphics.COLOR_RED;
 		dc.setColor(mBattcolor, Graphics.COLOR_TRANSPARENT);
 		dc.fillRectangle(87, 204, 44, 11);
@@ -81,14 +93,12 @@ class DeviceView extends PowerView {
 		var Endstatuspwrbr = 40 - pwr*0.4 ;
 		dc.fillRectangle(Startstatuspwrbr, 206, Endstatuspwrbr, 7);	
 
-
 	   } else {
 	   //! Display demo screen
 		dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
 	
 		if (licenseOK == true) {
-      		dc.drawText(109, 36, Graphics.FONT_XTINY, "Datarun prem 6m c2", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-      		dc.drawText(109, 64, Graphics.FONT_XTINY, "Version " + appversion, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+      		dc.drawText(109, 36, Graphics.FONT_XTINY, "Datarun prem 7m c0", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(109, 109, Graphics.FONT_TINY, "Registered !!", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(74, 145, Graphics.FONT_XTINY, "License code: ", Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(164, 145, Graphics.FONT_XTINY, mtest, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
@@ -101,7 +111,6 @@ class DeviceView extends PowerView {
 			dc.drawText(146, 125, Graphics.FONT_NUMBER_MEDIUM, ID1, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(55, 168, Graphics.FONT_MEDIUM, "ID 2: " , Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			dc.drawText(146, 162, Graphics.FONT_NUMBER_MEDIUM, ID2, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-			dc.drawText(109, 195, Graphics.FONT_XTINY, "Version " + appversion, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
       	}
 	   }
 	   
