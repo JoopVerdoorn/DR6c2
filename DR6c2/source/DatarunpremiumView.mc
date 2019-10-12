@@ -99,6 +99,7 @@ class DatarunpremiumView extends Ui.DataField {
     hidden var mLapTimerTimeHR				= 0;    
 	hidden var mLastLapTimeHRMarker			= 0;
 	hidden var mLastLapTimerTimeHR			= 0;
+	hidden var currentHR					= 0;
 	hidden var LapHeartrate					= 0;
 	hidden var LastLapHeartrate				= 0;
 	hidden var AverageHeartrate 			= 0; 
@@ -147,8 +148,8 @@ class DatarunpremiumView extends Ui.DataField {
 		CCode = hashfunction(umyNumber.toString())+649857;                
 		CCode = CCode*hashfunction((uHrZones[2]*uHrZones[4]+uHrZones[1]+uHrZones[3]).toString())-4934;
         CCode = (CCode > 0) ? CCode : -CCode; 
-		CCode = CCode % 318948 + 54831; 
-		licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false;
+		CCode = CCode % 318948 + 54831;
+		licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false; 
     }
 
     //! Timer transitions from stopped to running state
@@ -269,7 +270,9 @@ class DatarunpremiumView extends Ui.DataField {
             }
         }
 
+
 		//!Fill field metrics
+		currentHR = (info.currentHeartRate != null) ? info.currentHeartRate : 0;
 		var i = 0; 
 	    for (i = 1; i < 7; ++i) {	    
         	if (metric[i] == 0) {
@@ -391,7 +394,7 @@ class DatarunpremiumView extends Ui.DataField {
 		       	fieldLabel[i] = "Altitude";
 		       	fieldFormat[i] = "0decimal";        		
         	} else if (metric[i] == 45) {
-    	        fieldValue[i] = (info.currentHeartRate != null) ? info.currentHeartRate : 0;
+    	        fieldValue[i] = currentHR;
         	    fieldLabel[i] = "HR";
             	fieldFormat[i] = "0decimal";
 			}

@@ -21,6 +21,17 @@ class CiqView extends ExtramemView {
 	var lastsrunPower						= 0;
 	var setPowerWarning 					= 0;
 	var Garminfont = Ui.loadResource(Rez.Fonts.Garmin1);
+	var Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin4);
+	var Power1 									= 0;
+    var Power2 									= 0;
+    var Power3 									= 0;	
+	var Power4 									= 0;
+    var Power5 									= 0;
+    var Power6 									= 0;
+	var Power7 									= 0;
+    var Power8 									= 0;
+    var Power9 									= 0;
+    var Power10									= 0;
 		
     function initialize() {
         ExtramemView.initialize();
@@ -37,7 +48,19 @@ class CiqView extends ExtramemView {
 				rolavPowmaxsecs = (rolavPowmaxsecs < 30) ? 30 : rolavPowmaxsecs;
 			}
 		}	
-		Garminfont = (ID0 == 3624 or ID0 == 3588 or ID0 == 3762 or ID0 == 3761 or ID0 == 3757 or ID0 == 3758 or ID0 == 3759) ? Ui.loadResource(Rez.Fonts.Garmin1) : Graphics.FONT_NUMBER_MEDIUM;		
+		if (ID0 == 3588 or ID0 == 3832 or ID0 == 3624 or ID0 == 3952 or ID0 == 3762 or ID0 == 3962 or ID0 == 3761 or ID0 == 3961 or ID0 == 3757 or ID0 == 3931 or ID0 == 3758 or ID0 == 3932 or ID0 == 3759 or ID0 == 3959 or ID0 == 3798 or ID0 == 4023 or ID0 == 3799 or ID0 == 4024 or ID0 == 3621 or ID0 == 3600 or ID0 == 3411 or ID0 == 3645 or ID0 == 3622 or ID0 == 3646) {
+			Garminfont = Ui.loadResource(Rez.Fonts.Garmin1);
+			Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin4);		
+		} else if (ID0 == 3801 or ID0 == 4026 ) {
+			Garminfont = Ui.loadResource(Rez.Fonts.Garmin2);
+			Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin5);
+		} else if (ID0 == 3802 or ID0 == 4027 ) {
+			Garminfont = Ui.loadResource(Rez.Fonts.Garmin3);
+			Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin6);
+		} else {
+			Garminfont = Graphics.FONT_NUMBER_MEDIUM;
+			Garminfontgroot = Graphics.FONT_NUMBER_HOT;
+		}			
     }
 
     //! Calculations we need to do every second even when the data field is not visible
@@ -100,6 +123,35 @@ class CiqView extends ExtramemView {
 			LastLapPower2HRRatio 		= (0.00001 + LastLapPower) / LastLapHeartrate;
 		}			
 
+		//!Calculate 5 and 10sec averaged power
+        var AveragePower5sec  	 			= 0;
+        var AveragePower10sec  	 			= 0;
+        var currentPowertest				= 0;
+		if (info.currentSpeed != null && info.currentPower != null) {
+        	currentPowertest = info.currentPower; 
+        }
+        if (currentPowertest > 0) {
+            if (currentPowertest > 0) {
+				if (info.currentPower != null) {
+        			Power1								= info.currentPower; 
+        		} else {
+        			Power1								= 0;
+				}
+        		Power10 							= Power9;
+        		Power9 								= Power8;
+        		Power8 								= Power7;
+        		Power7 								= Power6;
+        		Power6 								= Power5;
+        		Power5 								= Power4;
+        		Power4 								= Power3;
+        		Power3 								= Power2;
+        		Power2 								= Power1;
+				AveragePower10sec	= (Power1+Power2+Power3+Power4+Power5+Power6+Power7+Power8+Power9+Power10)/10;
+				AveragePower5sec	= (Power1+Power2+Power3+Power4+Power5)/5;
+				AveragePower3sec	= (Power1+Power2+Power3)/5;
+			}
+ 		}
+ 		
 		//! Calculation of rolling average of power 
 		var zeroValueSecs = 0;
 		if (counterPower < 1) {
@@ -155,6 +207,7 @@ class CiqView extends ExtramemView {
 
 		
 		dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
+		var Actualpower = (info.currentPower != null) ? info.currentPower : 0;
 		
 		i = 0; 
 	    for (i = 1; i < 7; ++i) {
@@ -167,9 +220,13 @@ class CiqView extends ExtramemView {
     	        fieldLabel[i] = "Pc ..sec";
         	    fieldFormat[i] = "pace";            	
 			} else if (metric[i] == 55) {   
-            	fieldValue[i] = (info.currentSpeed != null or info.currentSpeed!=0) ? 100/info.currentSpeed : 0;
+            	if (info.currentSpeed == null or info.currentSpeed==0) {
+            		fieldValue[i] = 0;
+            	} else {
+            		fieldValue[i] = (info.currentSpeed > 0.001) ? 100/info.currentSpeed : 0;
+            	}
             	fieldLabel[i] = "s/100m";
-        	    fieldFormat[i] = "2decimal";
+        	    fieldFormat[i] = "1decimal";
         	} else if (metric[i] == 25) {
     	        fieldValue[i] = LapEfficiencyIndex;
         	    fieldLabel[i] = "Lap EI";
@@ -202,6 +259,14 @@ class CiqView extends ExtramemView {
 	            fieldValue[i] = CurrentPower2HRRatio;
     	        fieldLabel[i] = "C P2HR";
         	    fieldFormat[i] = "2decimal";
+        	} else if (metric[i] == 70) {
+    	        fieldValue[i] = AveragePower5sec;
+        	    fieldLabel[i] = "Pwr 5s";
+            	fieldFormat[i] = "power";
+			} else if (metric[i] == 39) {
+    	        fieldValue[i] = AveragePower10sec;
+        	    fieldLabel[i] = "Pwr 10s";
+            	fieldFormat[i] = "power";
 			} else if (metric[i] == 37) {
 	            fieldValue[i] = Averagepowerpersec;
     	        fieldLabel[i] = "Pw ..sec";
@@ -210,6 +275,42 @@ class CiqView extends ExtramemView {
 	            fieldValue[i] = mNormalizedPow;
     	        fieldLabel[i] = "N Power";
         	    fieldFormat[i] = "0decimal";
+        	} else if (metric[i] == 80) {
+    	        fieldValue[i] = (info.maxPower != null) ? info.maxPower : 0;
+        	    fieldLabel[i] = "Max Pwr";
+            	fieldFormat[i] = "power";
+        	} else if (metric[i] == 71) {
+            	fieldValue[i] = (uFTP != 0) ? Actualpower*100/uFTP : 0;
+            	fieldLabel[i] = "%FTP";
+            	fieldFormat[i] = "power";   
+	        } else if (metric[i] == 72) {
+    	        fieldValue[i] = (uFTP != 0) ? AveragePower3sec*100/uFTP : 0;
+        	    fieldLabel[i] = "%FTP 3s";
+            	fieldFormat[i] = "power";
+			} else if (metric[i] == 73) {
+    	        fieldValue[i] = (uFTP != 0) ? LapPower*100/uFTP : 0;
+        	    fieldLabel[i] = "L %FTP";
+            	fieldFormat[i] = "power";
+			} else if (metric[i] == 74) {
+        	    fieldValue[i] = (uFTP != 0) ? LastLapPower*100/uFTP : 0;
+            	fieldLabel[i] = "LL %FTP";
+            	fieldFormat[i] = "power";
+	        } else if (metric[i] == 75) {
+    	        fieldValue[i] = (uFTP != 0) ? AveragePower*100/uFTP : 0;
+        	    fieldLabel[i] = "A %FTP";
+            	fieldFormat[i] = "power";  
+	        } else if (metric[i] == 76) {
+    	        fieldValue[i] = (uFTP != 0) ? AveragePower5sec*100/uFTP : 0;
+        	    fieldLabel[i] = "%FTP 5s";
+            	fieldFormat[i] = "power";
+			} else if (metric[i] == 77) {
+    	        fieldValue[i] = (uFTP != 0) ? AveragePower10sec*100/uFTP : 0;
+        	    fieldLabel[i] = "%FTP 10s";
+            	fieldFormat[i] = "power";
+			} else if (metric[i] == 78) {
+	            fieldValue[i] = (uFTP != 0) ? Averagepowerpersec*100/uFTP : 0;
+    	        fieldLabel[i] = "%FTP ..sec";
+        	    fieldFormat[i] = "power";
 			} else if (metric[i] == 58) {
 	            fieldValue[i] = mIntensityFactor;
     	        fieldLabel[i] = "IF";
@@ -310,11 +411,15 @@ class CiqView extends ExtramemView {
             		dc.drawText(xh, yh, Graphics.FONT_LARGE, fTimerHours, Graphics.TEXT_JUSTIFY_LEFT|Graphics.TEXT_JUSTIFY_VCENTER);
             		fTimer = (fieldvalue / 60 % 60).format("%02d") + ":" + fTimerSecs;  
         		}
-       			dc.drawText(xx, y, Garminfont, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+				if ( counter == 3) {
+       				dc.drawText(xx, y, Garminfontgroot, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       			} else {	
+       				dc.drawText(xx, y, Garminfont, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       			}
         	}
         } else {
  			if ( counter == 3) {
-        		dc.drawText(x, y, Graphics.FONT_NUMBER_HOT, fieldvalue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+        		dc.drawText(x, y, Garminfontgroot, fieldvalue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
         	} else {
         		dc.drawText(x, y, Garminfont, fieldvalue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			}
