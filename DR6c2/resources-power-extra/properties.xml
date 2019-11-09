@@ -54,7 +54,7 @@
     <string id="AppName">Datarun premium with 6 metrics, copy 2</string>
     -->
     <string id="AppVersion"></string>
-    <string id="lDummysetting4version">Version 2.20c of Datarun premium with 6 metrics, copy 2 (dummy setting)</string>
+    <string id="lDummysetting4version">Version 2.20d of Datarun premium with 6 metrics, copy 2 (dummy setting)</string>
 	<string id="lTimeMenu">___Time items___</string>
 	<string id="lDistanceMenu">___Distance items___</string>
 	<string id="lPaceMenu">___Pace items___</string>
@@ -108,7 +108,7 @@
     <string id="MyNumberTitle">Enter license key</string>
     <string id="MyNumberError">Not valid, only numbers allowed!</string>
     <string id="l">C-Code generated on the watch by the corresponding main Datarun premium datafield</string> 
-    <string id="lRacedistanceTitle">Enter race distance in meters for estimated finish time</string>
+    <string id="lRacedistanceTitle">Enter race distance in meters or thousands of a mile (imperial/statute watch settings) for estimated finish time</string>
     <string id="lRacedistanceError">Not valid, only numbers allowed!</string>
     <string id="lRacetimeTitle">Enter desired finish time for estimated deviation of finish time (format like 03:59:00 required!)</string>
 	<string id="lHeartratefield">Heartrate field on middle row</string>
@@ -877,8 +877,8 @@
         
         <listEntry value="992">@Strings.lPaceMenu</listEntry>
         <listEntry value="8">@Strings.lCurrentPace</listEntry>
-        <listEntry value="55">@Strings.lPaceper100m</listEntry> 
-        <listEntry value="88">@Strings.lLLPaceper100m</listEntry>       
+        <listEntry value="55">@Strings.lPaceper100m</listEntry>   
+        <listEntry value="88">@Strings.lLLPaceper100m</listEntry>     
         <listEntry value="16">@Strings.lPaceper3km</listEntry>
         <listEntry value="9">@Strings.lPaceper5km</listEntry>
         <listEntry value="17">@Strings.lPaceper300km</listEntry>
@@ -918,13 +918,13 @@
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         
         <listEntry value="997">@Strings.lPIMenu</listEntry>
-        <listEntry value="32">@Strings.lCEFactor</listEntry>
-        
+        <listEntry value="31">@Strings.lCEFactor</listEntry>
+        <listEntry value="32">@Strings.lAEFactor</listEntry>
         <listEntry value="28">@Strings.lLEFactor</listEntry>
         <listEntry value="29">@Strings.lLLEFactor</listEntry>
         <listEntry value="30">@Strings.lAEFactor</listEntry>
-        <listEntry value="54">@Strings.lTEffect</listEntry>
-		<listEntry value="87">@Strings.lkCalories</listEntry>
+        <listEntry value="54">@Strings.lTEffect</listEntry>  
+        <listEntry value="87">@Strings.lkCalories</listEntry>
       </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pdisablelabel1" title="@Strings.ldisablelabel1">
