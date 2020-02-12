@@ -144,12 +144,12 @@ class DatarunpremiumView extends Ui.DataField {
 		ID1 = mHash % 315127+1864;
 		mtest = ((ID2-329)*315127 + ID1-1864) % 74539;
 		mtest = (mtest < 1000) ? mtest + 80000 : mtest;
-                
+        licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false;
+        
 		CCode = hashfunction(umyNumber.toString())+649857;                
 		CCode = CCode*hashfunction((uHrZones[2]*uHrZones[4]+uHrZones[1]+uHrZones[3]).toString())-4934;
         CCode = (CCode > 0) ? CCode : -CCode; 
 		CCode = CCode % 318948 + 54831; 
-		licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false;
     }
 
     //! Timer transitions from stopped to running state

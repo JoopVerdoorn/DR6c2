@@ -22,12 +22,13 @@
 	
   <strings>
     <!-- Release name: -->
-    <string id="AppName">Datarun premium with 6 metrics, copy 2</string>
+    <string id="AppName">Datarun premium with 6 metrics, copy 2 version</string>
     <!-- Beta name:
-    <string id="AppName">Datarun premium with 6 metrics, copy 2</string>
+    <string id="AppName">Datarun premium with 6 metrics, copy 2 version</string>
     -->
     <string id="AppVersion"></string>
-    <string id="lDummysetting4version">Version 2.20e of Datarun premium with 6 metrics, copy 2 (dummy setting)</string>
+    <string id="lCCnumber">C-Code generated on the watch by the corresponding main Datarun premium datafield</string>
+    <string id="lDummysetting4version">Version 2.23b of Datarun premium with 6 metrics, copy 2 version (dummy setting)</string>
 	<string id="lTimeMenu">___Time items___</string>
 	<string id="lDistanceMenu">___Distance items___</string>
 	<string id="lPaceMenu">___Pace items___</string>
@@ -63,7 +64,7 @@
 	<string id="lETAfromLap">Calculation of ETA based on elapsed time of last lap, instead of total average speed</string>
     <string id="lETA">Estimated time of arrival</string>
     <string id="lETAfrompace">Estimated finished time based on average or last lap pace</string>
-	<string id="lETAdeviation">Deviation from required finish7 in hours, minutes and seconds</string>
+	<string id="lETAdeviation">Deviation from required finish in hours, minutes and seconds</string>
 	
     <string id="lRoundedPace">Show current pace as Rounded Pace</string>
 
@@ -94,7 +95,6 @@
 	<string id="lLLSpeed">Last lap speed in km/mile per hour</string>
 	<string id="lAverageSpeed">Average speed in km/mile per hour</string>
 	<string id="lCadence">Cadence in steps per minute</string>
-	<string id="lCCnumber">C-Code generated on the watch by the corresponding main Datarun premium datafield</string>
 
  </strings>
 
@@ -114,6 +114,7 @@
     <setting propertyKey="@Properties.pCCnumber" title="@Strings.lCCnumber">
         <settingConfig type="numeric" errorMessage="@Strings.MyNumberError" />
     </setting>
+    
     <setting propertyKey="@Properties.pRoundedPace" title="@Strings.lRoundedPace">
       <settingConfig type="boolean" required="true" />
     </setting>
