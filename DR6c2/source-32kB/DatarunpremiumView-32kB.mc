@@ -1,30 +1,13 @@
 using Toybox.WatchUi as Ui;
-using Toybox.Application.Storage;
-using Toybox.Background;
-using Toybox.Communications;
-using Toybox.System;
 
 class DR6c2App extends Toybox.Application.AppBase {
-    hidden var temp;
     function initialize() {
         AppBase.initialize();
     }
 
     //! Return the initial view of your application here
     function getInitialView() {
-        if(Toybox.System has :ServiceDelegate) {
-			Background.registerForTemporalEvent(new Time.Duration(5 * 60));
-		}
-   		return [ new DeviceView() ];
-	}
-
-	function onBackgroundData(data) {
-		temp=data;
-		Storage.setValue("mytemp", temp);	
-	}
-
-	function getServiceDelegate(){
-		return [new TempBgServiceDelegate()];  
+        return [ new DeviceView() ];  
     }
 }
 
@@ -142,7 +125,7 @@ class DatarunpremiumView extends Ui.DataField {
          uETAfromLap		 = mApp.getProperty("pETAfromLap");
          var uHrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
          var uCCnumber	     = mApp.getProperty("pCCnumber");
-          	 
+                   	 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
             unitP = 1609.344;
         }
@@ -161,12 +144,12 @@ class DatarunpremiumView extends Ui.DataField {
 		ID1 = mHash % 315127+1864;
 		mtest = ((ID2-329)*315127 + ID1-1864) % 74539;
 		mtest = (mtest < 1000) ? mtest + 80000 : mtest;
-        
+                
 		CCode = hashfunction(umyNumber.toString())+649857;                
 		CCode = CCode*hashfunction((uHrZones[2]*uHrZones[4]+uHrZones[1]+uHrZones[3]).toString())-4934;
         CCode = (CCode > 0) ? CCode : -CCode; 
-		CCode = CCode % 318948 + 54831; 
-		licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false;
+		CCode = CCode % 318948 + 54831;
+		licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false; 
     }
 
     //! Timer transitions from stopped to running state

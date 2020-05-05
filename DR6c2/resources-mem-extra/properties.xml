@@ -29,19 +29,16 @@
     <property id="pdisablelabel4" type="boolean">false</property>
     <property id="pdisablelabel5" type="boolean">false</property>
     <property id="pdisablelabel6" type="boolean">false</property>
+    <property id="ptempunits" type="boolean">false</property>
     <property id="pCCnumber" type="number">9999999</property>
   </properties>
 
 	
   <strings>
-    <!-- Release name: -->
     <string id="AppName">Datarun premium with 6 metrics, copy 2 version</string>
-    <!-- Beta name:
-    <string id="AppName">Datarun premium with 6 metrics, copy 2 version</string>
-    -->
-    <string id="AppVersion"></string>
+    <string id="AppVersion">2.27b</string>
     <string id="lCCnumber">C-Code generated on the watch by the corresponding main Datarun premium datafield</string>
-    <string id="lDummysetting4version">Version 2.23c of Datarun premium with 6 metrics, copy 2 version (dummy setting)</string>
+    <string id="lDummysetting4version">Version 2.27b of Datarun premium with 6 metrics, copy 2 version (dummy setting)</string>
 	<string id="lTimeMenu">___Time items___</string>
 	<string id="lDistanceMenu">___Distance items___</string>
 	<string id="lPaceMenu">___Pace items___</string>
@@ -50,7 +47,7 @@
 	<string id="lHRMenu">___Heartrate items___</string>
 	<string id="lSPowerMenu">___Power items___</string>
 	<string id="lPIMenu">___Performance indicator items___</string>
-	<string id="lAltitudeMenu">___Altitude items___</string>
+	<string id="lAltitudeMenu">___Altitude and temperature items___</string>
     <string id="lTimerDisplay">Timer field</string>
     <string id="lTimerTimer">Timer</string>
     <string id="lTimerLap">Current lap time</string>
@@ -127,7 +124,9 @@
 	<string id="lCEFactor">Current efficiency factor</string>
 	<string id="lLEFactor">Current lap efficiency factor</string>
 	<string id="lLLEFactor">Last lap average efficiency factor</string>
-	<string id="lTemp">Current temperature</string>
+	<string id="lTemp">Current watch temperature</string>
+	<string id="lTempeTemp">Current Tempe temperature (requires Tempe!)</string>
+	<string id="ltempunits">Use Fahrenheit instead of Celsius for temperature metrics (Celsius is default)</string>
 	<string id="lGarminColors">Use Garmin color scheme for label colors (not applicable for Palladino 10 powerzones)</string>
 	<string id="ldisablelabel1">Disable colored label for upper left metric</string>
 	<string id="ldisablelabel2">Disable colored label for upper right metric</string>
@@ -170,6 +169,9 @@
     </setting>
     <setting propertyKey="@Properties.pRacetime" title="@Strings.lRacetimeTitle">
       <settingConfig type="alphaNumeric"  required="true"/>
+    </setting>
+    <setting propertyKey="@Properties.ptempunits" title="@Strings.ltempunits">
+      <settingConfig type="boolean" required="true" />
     </setting>
     <setting propertyKey="@Properties.pMilClockAltern" title="@Strings.lMilClockAltern">
       <settingConfig type="list" required="true">
@@ -256,6 +258,7 @@
         <listEntry value="52">@Strings.lElevationGain</listEntry>
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         <listEntry value="89">@Strings.lTemp</listEntry>
+        <listEntry value="105">@Strings.lTempeTemp</listEntry>
       </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pUpperRightMetric" title="@Strings.lUpperRightMetric">
@@ -326,6 +329,7 @@
         <listEntry value="52">@Strings.lElevationGain</listEntry>
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         <listEntry value="89">@Strings.lTemp</listEntry>
+        <listEntry value="105">@Strings.lTempeTemp</listEntry>
       </settingConfig>
     </setting>
 
@@ -391,6 +395,7 @@
         <listEntry value="52">@Strings.lElevationGain</listEntry>
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         <listEntry value="89">@Strings.lTemp</listEntry>
+        <listEntry value="105">@Strings.lTempeTemp</listEntry>
         </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pMiddleRightMetric" title="@Strings.lMiddleRightMetric">
@@ -455,6 +460,7 @@
         <listEntry value="52">@Strings.lElevationGain</listEntry>
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         <listEntry value="89">@Strings.lTemp</listEntry>
+        <listEntry value="105">@Strings.lTempeTemp</listEntry>
       </settingConfig>
     </setting>
     
@@ -526,6 +532,7 @@
         <listEntry value="52">@Strings.lElevationGain</listEntry>
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         <listEntry value="89">@Strings.lTemp</listEntry>
+        <listEntry value="105">@Strings.lTempeTemp</listEntry>
       </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pBottomRightMetric" title="@Strings.lBottomRightMetric">
@@ -596,6 +603,7 @@
         <listEntry value="52">@Strings.lElevationGain</listEntry>
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         <listEntry value="89">@Strings.lTemp</listEntry>
+        <listEntry value="105">@Strings.lTempeTemp</listEntry>
        </settingConfig>
     </setting>
     <setting propertyKey="@Properties.pClockFieldMetric" title="@Strings.lClockFieldMetric">
@@ -648,6 +656,7 @@
         <listEntry value="52">@Strings.lElevationGain</listEntry>
         <listEntry value="53">@Strings.lElevationLoss</listEntry>
         <listEntry value="89">@Strings.lTemp</listEntry>
+        <listEntry value="105">@Strings.lTempeTemp</listEntry>
         
         <listEntry value="997">@Strings.lPIMenu</listEntry>
         <listEntry value="32">@Strings.lCEFactor</listEntry>
