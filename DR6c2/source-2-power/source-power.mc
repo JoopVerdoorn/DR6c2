@@ -8,25 +8,27 @@ class PowerView extends CiqView {
 	hidden var mLastLapTimePwrMarker			= 0;
     hidden var mLapTimerTimePwr					= 0;	
     hidden var mLastLapTimerTimePwr				= 0;
-	hidden var AveragePower 					= 0; 
 	hidden var LapPower 						= 0; 
 	hidden var LastLapPower 					= 0; 
     var AveragePower3sec  	 					= 0;
 	var Power1 									= 0;
     var Power2 									= 0;
     var Power3 									= 0;
-	var vibrateseconds 							= 0;
-	hidden var uLapPwr4alerts 					= false;  
-	hidden var runPower							= 0;
-
-    
+	var vibrateseconds 							= 0;  
+	hidden var uLapPwr4alerts 					= false;
+    hidden var runPower							= 0;
+    var overruleWourkout					= false;
+    hidden var mPowerWarningunder				= 0;
+    hidden var mPowerWarningupper 				= 999;
+        
     function initialize() {
         CiqView.initialize();
          var mApp = Application.getApp();
          uRequiredPower		 = mApp.getProperty("pRequiredPower");
          uWarningFreq		 = mApp.getProperty("pWarningFreq");
          uAlertbeep			 = mApp.getProperty("pAlertbeep");
-         uLapPwr4alerts      = mApp.getProperty("pLapPwr4alerts");       
+         uLapPwr4alerts      = mApp.getProperty("pLapPwr4alerts");  
+         overruleWourkout	 = mApp.getProperty("poverruleWourkout");     
     }
 	
     //! Current activity is ended
@@ -57,7 +59,6 @@ class PowerView extends CiqView {
 		//!Calculate powermetrics
 		var mLapElapsedPower = mElapsedPower - mLastLapPowerMarker;
         
-		AveragePower = Math.round((mPowerTime != 0) ? mElapsedPower/mPowerTime : 0);  
 		LapPower = (mLapTimerTimePwr != 0) ? Math.round(mLapElapsedPower/mLapTimerTimePwr) : 0; 	
 		LastLapPower = (mLastLapTimerTimePwr != 0) ? Math.round(mLastLapElapsedPower/mLastLapTimerTimePwr) : 0;
 
@@ -70,28 +71,40 @@ class PowerView extends CiqView {
         if (currentPowertest > 0) {
             if (currentPowertest > 0) {
             	//! Calculate average power
+        		Power3 								= Power2;
+        		Power2 								= Power1;
 				if (info.currentPower != null) {
         			Power1								= runPower; 
         		} else {
         			Power1								= 0;
 				}
-        		Power3 								= Power2;
-        		Power2 								= Power1;
 				AveragePower3sec= (Power1+Power2+Power3)/3;
 			}
  		}
 
 		//! Alert when out of predefined powerzone
 		//!Calculate power metrics
-        var mPowerWarningunder = uRequiredPower.substring(0, 3);
-        var mPowerWarningupper = uRequiredPower.substring(4, 7);
+        mPowerWarningunder = uRequiredPower.substring(0, 3);
+        mPowerWarningupper = uRequiredPower.substring(4, 7);
         mPowerWarningunder = mPowerWarningunder.toNumber();
         mPowerWarningupper = mPowerWarningupper.toNumber(); 
+
+        if (Activity has :getCurrentWorkoutStep and overruleWourkout == false) {
+        	if (is32kBdevice == false) {
+	        	if (WorkoutStepHighBoundary > 0) {
+	        		mPowerWarningunder = WorkoutStepLowBoundary;
+    	    		mPowerWarningupper = WorkoutStepHighBoundary; 
+        		} else {
+        			mPowerWarningunder = 0;
+        			mPowerWarningupper = 999;
+        		}
+        	}
+        }
+
 		var vibrateData = [
-			new Attention.VibeProfile( 100, 100 )
+			new Attention.VibeProfile( 100, 200 )
 		];
 		
-
 		var runalertPower = 0;
 		if ( uLapPwr4alerts == true ) {
 	    	runalertPower 	 = LapPower;
@@ -100,7 +113,7 @@ class PowerView extends CiqView {
 		}
 		PowerWarning = 0;
 		if (jTimertime != 0) {
-		  if (runalertPower>mPowerWarningupper or runalertPower<mPowerWarningunder) { 
+		  if (runalertPower>mPowerWarningupper or runalertPower<mPowerWarningunder) {	 
 			 if (Toybox.Attention has :vibrate && uNoAlerts == false) {
 			 	vibrateseconds = vibrateseconds + 1;	 		  			
     			if (runalertPower>mPowerWarningupper) {
@@ -110,6 +123,7 @@ class PowerView extends CiqView {
     					if (uAlertbeep == true) {
     						Attention.playTone(Attention.TONE_ALERT_HI);
     					}
+    					Toybox.Attention.vibrate(vibrateData);
     					vibrateseconds = 0;
     				}
     			} else if (runalertPower<mPowerWarningunder){
@@ -129,29 +143,26 @@ class PowerView extends CiqView {
 		var i = 0; 
 	    for (i = 1; i < 7; ++i) {	    
         	if (metric[i] == 20) {
-            	fieldValue[i] = runPower;
+            	fieldValue[i] = (info.currentPower != null) ? runPower : 0;
             	fieldLabel[i] = "Power";
-            	fieldFormat[i] = "0decimal";   
+            	fieldFormat[i] = "power";   
 	        } else if (metric[i] == 21) {
     	        fieldValue[i] = AveragePower3sec;
         	    fieldLabel[i] = "Pwr 3s";
-            	fieldFormat[i] = "0decimal";
+            	fieldFormat[i] = "power";
 			} else if (metric[i] == 22) {
     	        fieldValue[i] = LapPower;
         	    fieldLabel[i] = "L Power";
-            	fieldFormat[i] = "0decimal";
+            	fieldFormat[i] = "power";
 			} else if (metric[i] == 23) {
         	    fieldValue[i] = LastLapPower;
             	fieldLabel[i] = "LL Pwr";
-            	fieldFormat[i] = "0decimal";
+            	fieldFormat[i] = "power";
 	        } else if (metric[i] == 24) {
-    	        fieldValue[i] = AveragePower;
+    	        fieldValue[i] = (info.averagePower != null) ? info.averagePower : 0;
         	    fieldLabel[i] = "A Power";
-            	fieldFormat[i] = "0decimal";   
+            	fieldFormat[i] = "power";   
 			}
-		//!einde invullen field metrics
 		}
-
 	}
-
 }

@@ -31,9 +31,9 @@ class DatarunpremiumView extends Ui.DataField {
 	hidden var mtest = 63869733;
 	hidden var jTimertime = 0;
 	
-	hidden var fieldValue = [1, 2, 3, 4, 5, 6, 7, 8];
-	hidden var fieldLabel = [1, 2, 3, 4, 5, 6, 7, 8];
-	hidden var fieldFormat = [1, 2, 3, 4, 5, 6, 7, 8];	
+	hidden var fieldValue = [1, 2, 3, 4, 5, 6, 7];
+	hidden var fieldLabel = [1, 2, 3, 4, 5, 6, 7];
+	hidden var fieldFormat = [1, 2, 3, 4, 5, 6, 7];	
 
     var Averagespeedinmper3sec 			= 0;
     var Averagespeedinmper5sec 			= 0;
@@ -59,12 +59,6 @@ class DatarunpremiumView extends Ui.DataField {
 
     hidden var uBacklight                   = false;
 
-    hidden var uUpperLeftMetric            = 0;    //! Timer is default
-    hidden var uUpperRightMetric           = 4;    //! Distance is default
-    hidden var uMiddleLeftMetric           = 45;    //! HR is default
-    hidden var uMiddleRightMetric           = 50;    //! Cadence is default
-    hidden var uBottomLeftMetric            = 10;    //! Power is default
-    hidden var uBottomRightMetric           = 20;    //! Lap power is default
     hidden var uRequiredPower		 		= "000:999";
     hidden var uWarningFreq		 			= 5;
     hidden var uAlertbeep			 		= false;
@@ -112,9 +106,9 @@ class DatarunpremiumView extends Ui.DataField {
          metric[1]    	= mApp.getProperty("pUpperLeftMetric");
          metric[2]   	= mApp.getProperty("pUpperRightMetric");
     	 metric[3]   	= mApp.getProperty("pMiddleLeftMetric");
-    	 metric[4]		= mApp.getProperty("pMiddleRightMetric");
-         metric[5]   	= mApp.getProperty("pBottomLeftMetric");
-         metric[6]  	= mApp.getProperty("pBottomRightMetric");         
+    	 metric[4] 		= mApp.getProperty("pMiddleRightMetric");    
+    	 metric[5]		= mApp.getProperty("pBottomLeftMetric");
+         metric[6]   	= mApp.getProperty("pBottomRightMetric");     
          uRoundedPace        = mApp.getProperty("pRoundedPace");
          uBacklight          = mApp.getProperty("pBacklight");
          umyNumber			 = mApp.getProperty("myNumber");
@@ -125,7 +119,7 @@ class DatarunpremiumView extends Ui.DataField {
          uETAfromLap		 = mApp.getProperty("pETAfromLap");
          var uHrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
          var uCCnumber	     = mApp.getProperty("pCCnumber");
-                   	 
+          	 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
             unitP = 1609.344;
         }
@@ -144,12 +138,12 @@ class DatarunpremiumView extends Ui.DataField {
 		ID1 = mHash % 315127+1864;
 		mtest = ((ID2-329)*315127 + ID1-1864) % 74539;
 		mtest = (mtest < 1000) ? mtest + 80000 : mtest;
-                
+        
 		CCode = hashfunction(umyNumber.toString())+649857;                
 		CCode = CCode*hashfunction((uHrZones[2]*uHrZones[4]+uHrZones[1]+uHrZones[3]).toString())-4934;
         CCode = (CCode > 0) ? CCode : -CCode; 
-		CCode = CCode % 318948 + 54831;
-		licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false; 
+		CCode = CCode % 318948 + 54831; 
+        licenseOK = (umyNumber == mtest or CCode == uCCnumber) ? true : false;
     }
 
     //! Timer transitions from stopped to running state
@@ -220,26 +214,14 @@ class DatarunpremiumView extends Ui.DataField {
             mLastLapSpeed = mLastLapElapsedDistance / mLastLapTimerTime;
         }
 
-		//! Calculate average speed
-        CurrentSpeedinmpersec = 0;
-        if (info.currentSpeed != null) {
-        	CurrentSpeedinmpersec = info.currentSpeed; 
-        }
+		//! Calculate average speed over 5 sec
+        CurrentSpeedinmpersec = (info.currentSpeed != null) ? info.currentSpeed : 0;
         if (CurrentSpeedinmpersec > 0) {
-            	//! Calculate average pace
-				if (info.currentSpeed != null) {
         		Pace5 								= Pace4;
         		Pace4 								= Pace3;
         		Pace3 								= Pace2;
         		Pace2 								= Pace1;
-        		Pace1								= info.currentSpeed; 
-        		} else {
-					Pace5 								= Pace4;
-    	    		Pace4 								= Pace3;
-        			Pace3 								= Pace2;
-        			Pace2 								= Pace1;
-        			Pace1								= 0;
-				}
+        		Pace1								= CurrentSpeedinmpersec; 
 				Averagespeedinmper5sec= (Pace1+Pace2+Pace3+Pace4+Pace5)/5;
 				Averagespeedinmper3sec= (uRoundedPace) ? unitP/(Math.round( (unitP/(Pace1+Pace2+Pace3)*3) / 5 ) * 5) : (Pace1+Pace2+Pace3)/3;
 				CurrentSpeedinmpersec= (uRoundedPace) ? unitP/(Math.round( unitP/CurrentSpeedinmpersec / 5 ) * 5) : CurrentSpeedinmpersec;
@@ -270,11 +252,10 @@ class DatarunpremiumView extends Ui.DataField {
             }
         }
 
-
 		//!Fill field metrics
 		currentHR = (info.currentHeartRate != null) ? info.currentHeartRate : 0;
 		var i = 0; 
-	    for (i = 1; i < 7; ++i) {	    
+	    for (var i = 1; i < 7; ++i) {	    
         	if (metric[i] == 0) {
             	fieldValue[i] = (info.timerTime != null) ? info.timerTime/1000 : 0;
             	fieldLabel[i] = "Timer";
