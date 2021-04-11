@@ -22,9 +22,9 @@ class CiqView extends DatarunpremiumView {
             mHeartrateTime		 = (info.currentHeartRate != null) ? mHeartrateTime+1 : mHeartrateTime;				
            	mElapsedHeartrate    = (info.currentHeartRate != null) ? mElapsedHeartrate + info.currentHeartRate : mElapsedHeartrate;
             //!Calculate lappower
-            mPowerTime		 = (info.currentPower != null) ? mPowerTime+1 : mPowerTime;
+            mPowerTime		 = (info.currentPower != null and mTimerRunning) ? mPowerTime+1 : mPowerTime;
 			runPower 		 = (info.currentPower != null) ? info.currentPower : 0;
-			mElapsedPower    = mElapsedPower + runPower;              
+			mElapsedPower    = (mTimerRunning) ? mElapsedPower + runPower : mElapsedPower;              
         }
 	}
 
@@ -72,7 +72,7 @@ class CiqView extends DatarunpremiumView {
         if ( counter == 5 or counter == 6 ) {
         	if ( ID0 == 3798 or ID0 == 4023 ) { //! Fenix 6s
         		ycorrectionFenix6or6s = 3;
-        	} else if ( ID0 == 3800 or ID0 == 4025 ) { //! Fenix 6
+        	} else if ( ID0 == 3800 or ID0 == 4025 or ID0 == 4149) { //! Fenix 6  and Enduro
         		ycorrectionFenix6or6s = 4;
         	}
         	y = y + ycorrectionFenix6or6s;
@@ -126,7 +126,7 @@ class CiqView extends DatarunpremiumView {
 				if ( counter == 3) {
        				dc.drawText(xx, y, Graphics.FONT_NUMBER_HOT, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
        			} else {	
-       				if ( ID0 == 3798 or ID0 == 4023 or ID0 == 3800 or ID0 == 4025) { //! Fenix 6(s)
+       				if ( ID0 == 3798 or ID0 == 4023 or ID0 == 3800 or ID0 == 4025 or ID0 == 4149) { //! Fenix 6(s) and Enduro
         				dc.drawText(xx, y, Graphics.FONT_NUMBER_MILD, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
         			} else {
         				dc.drawText(xx, y, Graphics.FONT_NUMBER_MEDIUM, fTimer, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
@@ -137,7 +137,7 @@ class CiqView extends DatarunpremiumView {
  			if ( counter == 3) {
         		dc.drawText(x, y, Graphics.FONT_NUMBER_HOT, fieldvalue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
         	} else {
-        		if ( ID0 == 3798 or ID0 == 4023 or ID0 == 3800 or ID0 == 4025) { //! Fenix 6(s)
+        		if ( ID0 == 3798 or ID0 == 4023 or ID0 == 3800 or ID0 == 4025 or ID0 == 4149) { //! Fenix 6(s)  and Enduro
 	        		dc.drawText(x, y, Graphics.FONT_NUMBER_MILD, fieldvalue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
     	    	} else {
         			dc.drawText(x, y, Graphics.FONT_NUMBER_MEDIUM, fieldvalue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);

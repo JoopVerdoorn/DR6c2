@@ -97,27 +97,7 @@ class ExtramemView extends DatarunpremiumView {
 	            fieldValue[i] = (info.currentHeartRate != null) ? info.currentHeartRate : 0;
     	        fieldLabel[i] = "HR zone";
         	    fieldFormat[i] = "1decimal";      
-        	} else if (metric[i] == 28) {
-    	        fieldValue[i] = (LapHeartrate != 0) ? mLapSpeed*60/LapHeartrate : 0;
-        	    fieldLabel[i] = "Lap EF";
-            	fieldFormat[i] = "2decimal";
-			} else if (metric[i] == 29) {
-    	        fieldValue[i] = (LastLapHeartrate != 0) ? mLastLapSpeed*60/LastLapHeartrate : 0;
-        	    fieldLabel[i] = "LL EF";
-            	fieldFormat[i] = "2decimal";
-			} else if (metric[i] == 30) {
-	            fieldValue[i] = (info.averageSpeed != null && AverageHeartrate != 0) ? info.averageSpeed*60/AverageHeartrate : 0;
-    	        fieldLabel[i] = "Avg EF";
-        	    fieldFormat[i] = "2decimal";
-			} else if (metric[i] == 32) {
-	            fieldValue[i] = (info.currentHeartRate != null && info.currentHeartRate != 0) ? mLapSpeed*60/info.currentHeartRate : 0;
-    	        fieldLabel[i] = "Cur EF";
-        	    fieldFormat[i] = "2decimal";  	    
-        	} else if (metric[i] == 54) {
-    	        fieldValue[i] = (info.trainingEffect != null) ? info.trainingEffect : 0;
-        	    fieldLabel[i] = "T effect";
-            	fieldFormat[i] = "2decimal";           	         	         	
-			} else if (metric[i] == 52) {
+        	} else if (metric[i] == 52) {
            		fieldValue[i] = valueAsc;
             	fieldLabel[i] = "EL gain";
             	fieldFormat[i] = "0decimal";
@@ -133,22 +113,6 @@ class ExtramemView extends DatarunpremiumView {
            		fieldValue[i] = 3.6*Averagespeedinmpersec*1000/unitP ;
             	fieldLabel[i] = "Spd ..s";
             	fieldFormat[i] = "2decimal";           	
-			} else if (metric[i] == 83) {
-            	fieldValue[i] = (maxHR != 0) ? currentHR*100/maxHR : 0;
-            	fieldLabel[i] = "%MaxHR";
-            	fieldFormat[i] = "0decimal";   
-			} else if (metric[i] == 84) {
-    	        fieldValue[i] = (maxHR != 0) ? LapHeartrate*100/maxHR : 0;
-        	    fieldLabel[i] = "L %MaxHR";
-            	fieldFormat[i] = "0decimal";
-			} else if (metric[i] == 85) {
-        	    fieldValue[i] = (maxHR != 0) ? LastLapHeartrate*100/maxHR : 0;
-            	fieldLabel[i] = "LL %MaxHR";
-            	fieldFormat[i] = "0decimal";
-	        } else if (metric[i] == 86) {
-    	        fieldValue[i] = (maxHR != 0) ? AverageHeartrate*100/maxHR : 0;
-        	    fieldLabel[i] = "A %MaxHR";
-            	fieldFormat[i] = "0decimal";  
 			} else if (metric[i] == 88) {   
             	if (mLastLapSpeed == null or info.currentSpeed==0) {
             		fieldValue[i] = 0;
@@ -157,10 +121,6 @@ class ExtramemView extends DatarunpremiumView {
             	}
             	fieldLabel[i] = "LL s/100m";
         	    fieldFormat[i] = "1decimal";
-	        } else if (metric[i] == 87) {
-    	        fieldValue[i] = (info.calories != null) ? info.calories : 0;
-        	    fieldLabel[i] = "kCal";
-            	fieldFormat[i] = "0decimal";
             } else if (metric[i] == 89) {
     	        fieldValue[i] = (sensorIter != null) ? sensorIter.next().data : 0;
     	        fieldValue[i] = (utempunits == false) ? fieldValue[i] : fieldValue[i]*1.8+32;

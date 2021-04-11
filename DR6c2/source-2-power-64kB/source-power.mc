@@ -23,7 +23,7 @@ class PowerView extends CiqView {
          uRequiredPower		 = mApp.getProperty("pRequiredPower");
          uWarningFreq		 = mApp.getProperty("pWarningFreq");
          uAlertbeep			 = mApp.getProperty("pAlertbeep");
-         uLapPwr4alerts      = 0;  
+         uLapPwr4alerts      = mApp.getProperty("pLapPwr4alerts");  
          overruleWourkout	 = mApp.getProperty("poverruleWourkout");     
     }
 	
@@ -59,6 +59,7 @@ class PowerView extends CiqView {
 		LastLapPower = (mLastLapTimerTimePwr != 0) ? Math.round(mLastLapElapsedPower/mLastLapTimerTimePwr) : 0;
 
 		//! Alert when out of predefined powerzone
+		//!Calculate power metrics
         mPowerWarningunder = uRequiredPower.substring(0, 3);
         mPowerWarningupper = uRequiredPower.substring(4, 7);
         mPowerWarningunder = mPowerWarningunder.toNumber();
@@ -89,8 +90,6 @@ class PowerView extends CiqView {
 	    	runalertPower 	 = AveragePower5sec;
 		} else if ( uLapPwr4alerts == 3 ) {
 	    	runalertPower 	 = AveragePower10sec;
-		} else if ( uLapPwr4alerts == 4 ) {
-	    	runalertPower 	 = Averagepowerpersec;
 		} else if ( uLapPwr4alerts == 5 ) {
 	    	runalertPower 	 = LapPower;
 		} else if ( uLapPwr4alerts == 6 ) {
