@@ -1,3 +1,4 @@
+using Toybox.Time;
 using Toybox.WatchUi as Ui;
 
 class DR6c2App extends Toybox.Application.AppBase {
@@ -71,7 +72,7 @@ class DatarunpremiumView extends Ui.DataField {
     hidden var uRacedistance                = 42195;
     hidden var uRacetime					= "03:59:48";
 	hidden var mRacetime  					= 0;
-	var mETA								= 0;
+	hidden var mETA							= 0;
 	var uETAfromLap 						= true;
 	
     hidden var mLastLapDistMarker           = 0;
@@ -119,8 +120,8 @@ class DatarunpremiumView extends Ui.DataField {
          uRacetime			 = mApp.getProperty("pRacetime");
          uETAfromLap		 = mApp.getProperty("pETAfromLap");
          uShowRedClock		 = mApp.getProperty("pShowRedClock");
-         var uCCnumber	     = mApp.getProperty("pCCnumber");
          var uHrZones = UserProfile.getHeartRateZones(UserProfile.getCurrentSport());
+         var uCCnumber = mApp.getProperty("pCCnumber");
           	 
         if (System.getDeviceSettings().paceUnits == System.UNIT_STATUTE) {
             unitP = 1609.344;
@@ -257,7 +258,7 @@ class DatarunpremiumView extends Ui.DataField {
 		//!Fill field metrics
 		currentHR = (info.currentHeartRate != null) ? info.currentHeartRate : 0;
 		var i = 0; 
-	    for (var i = 1; i < 7; ++i) {	    
+	    for (i = 1; i < 7; ++i) {	    
         	if (metric[i] == 0) {
             	fieldValue[i] = (info.timerTime != null) ? info.timerTime/1000 : 0;
             	fieldLabel[i] = "Timer";
@@ -319,6 +320,8 @@ class DatarunpremiumView extends Ui.DataField {
         		fieldFormat[i] = "pace";
         		if (info.elapsedDistance != null and mRacetime != jTimertime and mRacetime > jTimertime) {
         			fieldValue[i] = (uRacedistance - info.elapsedDistance) / (mRacetime - jTimertime);
+        		} else {
+        			fieldValue[i] = uRacedistance / mRacetime;
         		} 
 	        } else if (metric[i] == 14) {
     	        fieldValue[i] = Math.round(mETA).toNumber();

@@ -1,3 +1,4 @@
+using Toybox.System as Sys;
 using Toybox.SensorHistory;
 using Toybox.Lang;
 using Toybox.System;
@@ -18,7 +19,10 @@ class ExtramemView extends DatarunpremiumView {
 	var uClockFieldMetric 					= 38; //! Powerzone is default
 	var HRzone								= 0;
 	hidden var Powerzone					= 0;
-	var VertPace							= [1, 2, 3, 4, 5, 6];
+	var totalVertPace 						= 0;
+	hidden var VertPace						= new [33];
+	var AverageVertspeedinmper30sec			= 0;
+	var CurrentVertSpeedinmpersec 			= 0;
 	var uGarminColors 						= false;
 	var Z1color = Graphics.COLOR_LT_GRAY;
 	var Z2color = Graphics.COLOR_YELLOW;
@@ -31,7 +35,6 @@ class ExtramemView extends DatarunpremiumView {
 	var kCalories							= 0;
 	var mElapsedCadence   					= 0;
 	var mLastLapCadenceMarker      			= 0;    
-    var mCurrentCadence    					= 0; 
     var mLastLapElapsedCadence				= 0;
     var mCadenceTime						= 0;
     var mLapTimerTimeCadence				= 0;    
@@ -43,10 +46,12 @@ class ExtramemView extends DatarunpremiumView {
 	var AverageCadence 						= 0;
 	hidden var tempeTemp 					= 20;
 	var utempunits							= false;
-	var valueAsclast						= 0;
-	var valueDesclast						= 0;
-	var Diff1 								= 0;
-	var Diff2 								= 0;
+	hidden var valueDesc 					= 0;
+	hidden var valueAsc 					= 0; 
+	hidden var valueAsclast					= 0;
+	hidden var valueDesclast				= 0;
+	hidden var Diff1 						= 0;
+	hidden var Diff2						= 0;
 	var utempcalibration					= 0;
 	var hrRest;
 	var HelpVar;
@@ -54,6 +59,39 @@ class ExtramemView extends DatarunpremiumView {
 	hidden var RealWorkoutStepNr 			= 0;
 	hidden var RealRemainingWorkoutTime		= 0;
 	hidden var DistinClockfield				= false;
+	hidden var dynamics;
+	hidden var groundContactBalance			= 0;
+	hidden var rollgroundContactBalance		= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+	hidden var AveragerollgroundContactBalance10sec= 0;
+	hidden var groundContactTime			= 0;
+	hidden var rollgroundContactTime		= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+	hidden var AveragerollgroundContactTime10sec= 0;
+	hidden var stanceTime					= 0;
+	hidden var rollstanceTime				= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+	hidden var AveragerollstanceTime10sec	= 0;
+	hidden var stepCount					= 0;
+	hidden var stepLength					= 0;
+	hidden var rollstepLength				= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+	hidden var AveragerollstepLength10sec	= 0;
+	hidden var verticalOscillation			= 0;
+	hidden var rollverticalOscillation		= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+	hidden var AveragerollverticalOscillation10sec= 0;
+	hidden var verticalRatio				= 0;
+	hidden var rollverticalRatio			= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+	hidden var startTime;
+	hidden var AveragerollverticalRatio10sec= 0;
+	hidden var workoutTarget                   ;
+	hidden var RemainingWorkoutTime  		= 0;
+    hidden var RemainingWorkoutDistance		= 0;
+    hidden var WorkoutStepDurationType  	= 9;
+    hidden var StartTimeNewStep				= 0;
+	var HR1									= 0; 
+    var HR2									= 0;
+    var HR3									= 0;
+    var mGPScolor							= Graphics.COLOR_LT_GRAY;
+    var GPSAccuracy							= "null";
+    var screenWidth 						= mySettings.screenWidth;
+    hidden var Vertgradsmoothed             = 0;
 	
     function initialize() {
         DatarunpremiumView.initialize();
@@ -72,10 +110,23 @@ class ExtramemView extends DatarunpremiumView {
 		disablelabel[6] 			= mApp.getProperty("pdisablelabel6");
 		utempcalibration 			= mApp.getProperty("pTempeCalibration");
 		
+		if(Toybox.AntPlus has :RunningDynamics) {
+			dynamics = new Toybox.AntPlus.RunningDynamics(null);
+		}
+		
 		var i; 
+		for (i = 1; i<33; ++i) {
+			VertPace[i] = 0; 
+		}     
+		
 		for (i = 1; i < 6; ++i) {
-			VertPace[i] = 0;
-		}       
+			rollgroundContactBalance[i] = 0;
+			rollgroundContactTime[i] = 0;
+			rollstanceTime[i] = 0;
+			rollstepLength[i] = 0;
+			rollverticalOscillation[i] = 0;
+			rollverticalRatio[i] = 0;
+		}  
 		
 		var uProfile = Toybox.UserProfile.getProfile();
 		hrRest = (uProfile.restingHeartRate != null) ? uProfile.restingHeartRate : 50;	
@@ -85,23 +136,39 @@ class ExtramemView extends DatarunpremiumView {
 	function onUpdate(dc) {
 		//! call the parent onUpdate to do the base logic
 		DatarunpremiumView.onUpdate(dc);
-		
+
 		tempeTemp = (Storage.getValue("mytemp") != null) ? Storage.getValue("mytemp") : 0;
 
     	//! Setup back- and foregroundcolours
-		if (uBlackBackground == true ){
-			mColourFont = Graphics.COLOR_WHITE;
-			mColourFont1 = Graphics.COLOR_WHITE;
-			mColourLine = Graphics.COLOR_GREEN;
-			mColourBackGround = Graphics.COLOR_BLACK;
+		if (mySettings.screenWidth == 416 and mySettings.screenHeight == 416 ) {
+			if (uBlackBackground == true ){
+				mColourFont = Graphics.COLOR_WHITE;
+				mColourFont1 = Graphics.COLOR_WHITE;
+				mColourLine = Graphics.COLOR_GREEN;
+				mColourBackGround = Graphics.COLOR_BLACK;
+			} else {
+				mColourFont = Graphics.COLOR_BLACK;
+				mColourFont1 = Graphics.COLOR_BLACK;
+				mColourLine = Graphics.COLOR_BLUE;
+				mColourBackGround = Graphics.COLOR_WHITE;
+			}
+			dc.setColor(mColourBackGround, Graphics.COLOR_TRANSPARENT);
+			dc.fillRectangle (0, 0, 416, 416);
 		} else {
-			mColourFont = Graphics.COLOR_BLACK;
-			mColourFont1 = Graphics.COLOR_BLACK;
-			mColourLine = Graphics.COLOR_BLUE;
-			mColourBackGround = Graphics.COLOR_WHITE;
-		}
-		dc.setColor(mColourBackGround, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle (0, 0, 280, 280);
+			if (uBlackBackground == true ){
+				mColourFont = Graphics.COLOR_WHITE;
+				mColourFont1 = Graphics.COLOR_WHITE;
+				mColourLine = Graphics.COLOR_GREEN;
+				mColourBackGround = Graphics.COLOR_BLACK;
+			} else {
+				mColourFont = Graphics.COLOR_BLACK;
+				mColourFont1 = Graphics.COLOR_BLACK;
+				mColourLine = Graphics.COLOR_BLUE;
+				mColourBackGround = Graphics.COLOR_WHITE;
+			}
+			dc.setColor(mColourBackGround, Graphics.COLOR_TRANSPARENT);
+			dc.fillRectangle (0, 0, 280, 280);
+        }	
         
         //! Calculate lap (Cadence) time
         mLapTimerTimeCadence 	= mCadenceTime - mLastLapTimeCadenceMarker;
@@ -145,32 +212,21 @@ class ExtramemView extends DatarunpremiumView {
         mRacemin = mRacemin.toNumber();
         mRacesec = mRacesec.toNumber();
         mRacetime = mRacehour*3600 + mRacemin*60 + mRacesec;
-	
-        
-		//! Calculate vertical speed
-		var valueDesc = (info.totalDescent != null) ? info.totalDescent : 0;
-        valueDesc = (unitD == 1609.344) ? valueDesc*3.2808 : valueDesc;
-        Diff1 = valueDesc - valueDesclast;
-		var valueAsc = (info.totalAscent != null) ? info.totalAscent : 0;
-        valueAsc = (unitD == 1609.344) ? valueAsc*3.2808 : valueAsc;
-        Diff2 = valueAsc - valueAsclast;
-        valueDesclast = valueDesc;
-        valueAsclast = valueAsc;
-        var CurrentVertSpeedinmpersec = Diff2-Diff1;
-		VertPace[5] 								= VertPace[4];
-		VertPace[4] 								= VertPace[3];
-		VertPace[3] 								= VertPace[2];
-        VertPace[2] 								= VertPace[1];
-        VertPace[1]								= CurrentVertSpeedinmpersec; 
-		var AverageVertspeedinmper5sec= (VertPace[1]+VertPace[2]+VertPace[3]+VertPace[4]+VertPace[5])/5;
 		
+		//!Calculate 3 sec rolling HR
+        		HR3 					= HR2;
+        		HR2 					= HR1;
+				HR1						= currentHR; 
+		var	AverageHR3sec= (HR1+HR2+HR3)/3;
+		
+		//! Options for metrics
 		var sensorIter = getIterator();
 		maxHR = uHrZones[5];
 		var i = 0; 
 	    for (i = 1; i < 8; ++i) {
 	        if (metric[i] == 17) {
 	            fieldValue[i] = Averagespeedinmpersec;
-    	        fieldLabel[i] = "Pc ..sec";
+    	        fieldLabel[i] = "Sp " + rolavPacmaxsecs + "s";
         	    fieldFormat[i] = "pace";  
         	} else if (metric[i] == 81) {
 	        	if (Toybox.Activity.Info has :distanceToNextPoint) {
@@ -207,7 +263,7 @@ class ExtramemView extends DatarunpremiumView {
         	} else if (metric[i] == 54) {
     	        fieldValue[i] = (info.trainingEffect != null) ? info.trainingEffect : 0;
         	    fieldLabel[i] = "T effect";
-            	fieldFormat[i] = "2decimal";           	
+            	fieldFormat[i] = "1decimal";           	
 			} else if (metric[i] == 52) {
            		fieldValue[i] = valueAsc;
             	fieldLabel[i] = "EL gain";
@@ -218,6 +274,7 @@ class ExtramemView extends DatarunpremiumView {
             	fieldFormat[i] = "0decimal";           	
         	}  else if (metric[i] == 61) {
            		fieldValue[i] = (info.currentCadence != null) ? Math.round(info.currentCadence/2) : 0;
+           		fieldValue[i] = (ucadenceWorkaround == true) ? fieldValue[i]*2 : fieldValue[i];  //! workaround multiply by two for FR945LTE and Fenix 6 series
             	fieldLabel[i] = "RCadence";
             	fieldFormat[i] = "0decimal";           	
         	}  else if (metric[i] == 62) {
@@ -226,12 +283,12 @@ class ExtramemView extends DatarunpremiumView {
             	fieldFormat[i] = "1decimal";           	
         	}  else if (metric[i] == 63) {
            		fieldValue[i] = 3.6*Averagespeedinmpersec*1000/unitP ;
-            	fieldLabel[i] = "Spd ..s";
+            	fieldLabel[i] = "Sp " + rolavPacmaxsecs + "s";
             	fieldFormat[i] = "1decimal";           	
         	}  else if (metric[i] == 67) {
-           		fieldValue[i] = (unitD == 1609.344) ? AverageVertspeedinmper5sec*3.2808 : AverageVertspeedinmper5sec;
+           		fieldValue[i] = (unitD == 1609.344) ? AverageVertspeedinmper30sec*3.2808 : AverageVertspeedinmper30sec;
             	fieldLabel[i] = "V speed";
-            	fieldFormat[i] = "1decimal";
+				fieldFormat[i] = "1decimal";
 			} else if (metric[i] == 83) {
             	fieldValue[i] = (maxHR != 0) ? currentHR*100/maxHR : 0;
             	fieldLabel[i] = "%MaxHR";
@@ -282,8 +339,115 @@ class ExtramemView extends DatarunpremiumView {
 	            fieldValue[i] = (utempunits == false) ? fieldValue[i]+utempcalibration : fieldValue[i]*1.8+32+utempcalibration;
     	        fieldLabel[i] = "Tempe T";
     	        fieldFormat[i] = "1decimal";
-			} 
+    	    } else if (metric[i] == 123) {			
+				var stats = Sys.getSystemStats();
+				fieldValue[i] = stats.battery;
+				fieldLabel[i] = "Battery";
+            	fieldFormat[i] = "0decimal";
+            } else if (metric[i] == 108) {
+           		fieldValue[i] = (unitD == 1609.344) ? AverageVertspeedinmper30sec*3.2808*3600 : AverageVertspeedinmper30sec*3600;
+            	fieldLabel[i] = "VAM-hour";
+            	fieldFormat[i] = "1decimal";
+			} else if (metric[i] == 109) {			
+				fieldValue[i] = AveragerollgroundContactBalance10sec;
+				fieldLabel[i] = "GBalance";
+            	fieldFormat[i] = "1decimal"; 
+            } else if (metric[i] == 110) {			
+				fieldValue[i] = AveragerollgroundContactTime10sec;
+				fieldLabel[i] = "GCTime";
+            	fieldFormat[i] = "0decimal";
+            } else if (metric[i] == 111) {			
+				fieldValue[i] = AveragerollstanceTime10sec;
+				fieldLabel[i] = "StanceT%";
+            	fieldFormat[i] = "1decimal";
+            } else if (metric[i] == 113) {			
+				fieldValue[i] = AveragerollstepLength10sec;
+				fieldValue[i] = (unitD == 1609.344) ? fieldValue[i]*3.2808/1000 : fieldValue[i]/1000;
+				fieldLabel[i] = "StepL";
+            	fieldFormat[i] = "2decimal";
+            } else if (metric[i] == 114) {			
+				fieldValue[i] = AveragerollverticalOscillation10sec;
+				fieldLabel[i] = "VertOsc";
+            	fieldFormat[i] = "1decimal";
+            } else if (metric[i] == 115) {			
+				fieldValue[i] = AveragerollverticalRatio10sec;
+				fieldLabel[i] = "VertRat";
+            	fieldFormat[i] = "1decimal";	
+            } else if (metric[i] == 116) {			
+				var myTime = Toybox.System.getClockTime();
+				fieldValue[i] = (jTimertime == 0) ? 0 : (1+myTime.hour.toNumber()*3600 + myTime.min.toNumber()*60 + myTime.sec.toNumber()) - (startTime.hour.toNumber()*3600 + startTime.min.toNumber()*60 + startTime.sec.toNumber());
+				fieldLabel[i] = "ElapsT";
+            	fieldFormat[i] = "time";	
+			} else if (metric[i] == 125) {
+            	if (jTimertime > 0) {
+           			fieldValue[i] = (info.totalAscent != null) ? info.totalAscent*60/jTimertime : 0;
+           			fieldValue[i] = (unitD == 1609.344) ? fieldValue[i]*3.2808 : fieldValue[i];
+           		} else {
+           			fieldValue[i] = 0;
+           		}
+            	fieldLabel[i] = "T-Asc-m";
+            	fieldFormat[i] = "0decimal";
+            } else if (metric[i] == 126) {
+            	if (jTimertime > 0) {
+           			fieldValue[i] = (info.totalAscent != null) ? info.totalAscent*3600/jTimertime : 0;
+           			fieldValue[i] = (unitD == 1609.344) ? fieldValue[i]*3.2808 : fieldValue[i];
+           		} else {
+           			fieldValue[i] = 0;
+           		}
+            	fieldLabel[i] = "T-Asc-h";
+            	fieldFormat[i] = "0decimal";
+			} else if (metric[i] == 130) {
+           		fieldValue[i] = AverageHR3sec;
+            	fieldLabel[i] = "HR 3s";
+            	fieldFormat[i] = "0decimal";
+			}
 		}
+		
+		//! Show GPS accuracy
+        GPSAccuracy=info.currentLocationAccuracy;
+        if (GPSAccuracy == null or GPSAccuracy == 1) {
+        	mGPScolor = Graphics.COLOR_LT_GRAY;
+        } else if (GPSAccuracy == 2) {
+        	mGPScolor = Graphics.COLOR_RED;
+        } else if (GPSAccuracy == 3) {
+        	mGPScolor = Graphics.COLOR_PURPLE;
+        } else if (GPSAccuracy == 4) {
+			mGPScolor = mColourBackGround;
+		} else {
+		    mGPScolor = Graphics.COLOR_LT_GRAY;
+		}
+		dc.setColor(mGPScolor, Graphics.COLOR_TRANSPARENT);
+
+		if (screenWidth == 240) {
+			dc.fillRectangle(10, 5, 64, 25); 
+			if (uMilClockAltern == 1) {
+			   dc.fillRectangle(183, 5, 55, 25);
+		    } else {
+		       dc.fillRectangle(165, 5, 55, 25);
+		    }
+		} else if (screenWidth == 260) { 
+			dc.fillRectangle(11, 5, 69, 26); 
+			if (uMilClockAltern == 1) {
+			   dc.fillRectangle(197, 5, 60, 26);
+		    } else {
+		       dc.fillRectangle(178, 5, 60, 26);
+		    }
+		} else if (screenWidth == 280) {
+			dc.fillRectangle(12, 6, 77, 28); 
+			if (uMilClockAltern == 1) {
+			   dc.fillRectangle(211, 6, 64, 28);
+			} else {
+			   dc.fillRectangle(191, 6, 64, 28);
+			}
+		} else if (screenWidth == 416) {
+			dc.fillRectangle(18, 9, 114, 44); 
+			if (uMilClockAltern == 1) {
+			   dc.fillRectangle(313, 9, 95, 44);
+			} else {
+			   dc.fillRectangle(284, 9, 95, 44);
+			}
+		}
+		dc.setColor(mColourLine, Graphics.COLOR_TRANSPARENT);
 
 		var CFMValue = 0;
         var CFMLabel = "error";
@@ -356,6 +520,7 @@ class ExtramemView extends DatarunpremiumView {
         	    CFMFormat = "0decimal";
 			} else if (uClockFieldMetric == 51) {
 		  		CFMValue = (info.altitude != null) ? Math.round(info.altitude).toNumber() : 0;
+		  		CFMValue = (unitD == 1609.344) ? CFMValue*3.2808 : CFMValue;
 		       	CFMFormat = "0decimal";        		
         	} else if (uClockFieldMetric == 45) {
     	        CFMValue = (info.currentHeartRate != null) ? info.currentHeartRate : 0;
@@ -392,6 +557,7 @@ class ExtramemView extends DatarunpremiumView {
             	CFMFormat = "0decimal";           	
         	}  else if (uClockFieldMetric == 61) {
            		CFMValue = (info.currentCadence != null) ? Math.round(info.currentCadence/2) : 0;
+           		CFMValue = (ucadenceWorkaround == true) ? CFMValue*2 : CFMValue;  //! workaround multiply by two for FR945LTE and Fenix 6 series
             	CFMFormat = "0decimal";           	
         	}  else if (uClockFieldMetric == 62) {
            		CFMValue = (info.currentSpeed != null) ? 3.6*((Pace1+Pace2+Pace3)/3)*1000/unitP : 0;
@@ -400,8 +566,8 @@ class ExtramemView extends DatarunpremiumView {
            		CFMValue = 3.6*Averagespeedinmpersec*1000/unitP ;
             	CFMFormat = "1decimal";           	
         	}  else if (uClockFieldMetric == 67) {
-           		CFMValue = (unitD == 1609.344) ? AverageVertspeedinmper5sec*3.2808 : AverageVertspeedinmper5sec;
-            	CFMFormat = "2decimal"; 
+           		CFMValue = (unitD == 1609.344) ? AverageVertspeedinmper30sec*3.2808 : AverageVertspeedinmper30sec;
+            	CFMFormat = "2decimal";
             } else if (uClockFieldMetric == 81) {
 	        	if (Toybox.Activity.Info has :distanceToNextPoint) {
     	        	CFMValue = (info.distanceToNextPoint != null) ? info.distanceToNextPoint / unitD : 0;
@@ -458,12 +624,68 @@ class ExtramemView extends DatarunpremiumView {
 	            CFMValue = RealWorkoutStepNr;
         	    CFMFormat = "0decimal";
         	} else if (uClockFieldMetric == 122) {
-	            CFMValue = RealRemainingWorkoutTime;
-   	    		if (DistinClockfield == false) {
-   	    			CFMFormat = "time";
-   	    		} else {
-   	    			CFMFormat = "2decimal";
-   	    		}
+	            if (workoutTarget != null) {
+		            if (WorkoutStepDurationType == 0) {
+						CFMValue = RemainingWorkoutTime;
+        	    		CFMFormat = "time";
+					} else if (WorkoutStepDurationType == 1) {
+						CFMValue = RemainingWorkoutDistance;
+        	    		CFMFormat = "2decimal";
+        	    	} else if (WorkoutStepDurationType == 5) {
+						CFMValue = jTimertime-StartTimeNewStep;
+        	    		CFMFormat = "time";
+					} 
+				}
+   	    	}  else if (uClockFieldMetric == 124) {
+           		CFMValue = (unitD == 1609.344) ? AverageVertspeedinmper30sec*3.2808*60 : AverageVertspeedinmper30sec*60;
+            	CFMFormat = "0decimal";
+   	    	}  else if (uClockFieldMetric == 108) {
+           		CFMValue = (unitD == 1609.344) ? AverageVertspeedinmper30sec*3.2808*3600 : AverageVertspeedinmper30sec*3600;
+            	CFMFormat = "0decimal";
+            } else if (uClockFieldMetric == 125) {
+	        	if (jTimertime > 0) {
+    	       			CFMValue = (info.totalAscent != null) ? info.totalAscent*60/jTimertime : 0;
+    	       			CFMValue = (unitD == 1609.344) ? CFMValue*3.2808 : CFMValue;
+        	   		} else {
+           				CFMValue = 0;
+           			}
+           		CFMFormat = "0decimal";
+           	} else if (uClockFieldMetric == 126) {
+	        	if (jTimertime > 0) {
+    	       			CFMValue = (info.totalAscent != null) ? info.totalAscent*3600/jTimertime : 0;
+    	       			CFMValue = (unitD == 1609.344) ? CFMValue*3.2808 : CFMValue;
+        	   		} else {
+           				CFMValue = 0;
+           			}
+           		CFMFormat = "0decimal";
+            } else if (uClockFieldMetric == 109) {			
+				CFMValue = AveragerollgroundContactBalance10sec;
+            	CFMFormat = "1decimal"; 
+            } else if (uClockFieldMetric == 110) {			
+				CFMValue = AveragerollgroundContactTime10sec;
+            	CFMFormat = "0decimal";
+            } else if (uClockFieldMetric == 111) {			
+				CFMValue = AveragerollstanceTime10sec;
+            	CFMFormat = "1decimal"; 	
+            } else if (uClockFieldMetric == 112) {			
+				CFMValue = stepCount;
+            	CFMFormat = "1decimal";
+            } else if (uClockFieldMetric == 113) {			
+				CFMValue = AveragerollstepLength10sec;
+				CFMValue = (unitD == 1609.344) ? CFMValue*3.2808/1000 : CFMValue/1000;
+            	CFMFormat = "2decimal";
+            } else if (uClockFieldMetric == 114) {			
+				CFMValue = AveragerollverticalOscillation10sec;
+            	CFMFormat = "1decimal";
+            } else if (uClockFieldMetric == 115) {			
+				CFMValue = AveragerollverticalRatio10sec;
+            	CFMFormat = "1decimal";
+			} else if (uClockFieldMetric == 130) {
+	        	CFMValue = AverageHR3sec;
+    	       	CFMFormat = "0decimal";
+           	} else if (uClockFieldMetric == 131) {
+           		CFMValue = Vertgradsmoothed;
+            	CFMFormat = "1decimal";
 			}
 			
 		//! Determine HR-zone for clockfield
@@ -499,10 +721,10 @@ class ExtramemView extends DatarunpremiumView {
 
 		//! Display colored labels on screen	
 		if (mySettings.screenWidth == 260 and mySettings.screenHeight == 260) {  //! Fenix 6 pro labels
-			for (var i = 1; i < 7; ++i) {
+			for (i = 1; i < 7; ++i) {
 			   	if ( i == 1 ) {			//!upper row, left    	
 	    			if (disablelabel[1] == false) {
-	    				Coloring(dc,i,fieldValue[i],"018,031,110,020");
+	    				Coloring(dc,i,fieldValue[i],"018,031,111,020");
 					}	    		
 		   		} else if ( i == 2 ) {	//!upper row, right
 		   			if (disablelabel[2] == false) {
@@ -514,55 +736,83 @@ class ExtramemView extends DatarunpremiumView {
 					}
 	      		} else if ( i == 4 ) {  //!middle row, right
 		    		if (disablelabel[4] == false) {
-		    			Coloring(dc,i,fieldValue[i],"179,101,083,019");
+		    			Coloring(dc,i,fieldValue[i],"179,101,083,020");
 					}
 			   	} else if ( i == 5 ) {	//!lower row, left
 		   			if (disablelabel[5] == false) {
-		   				Coloring(dc,i,fieldValue[i],"018,217,110,019");
+		   				Coloring(dc,i,fieldValue[i],"018,217,111,020");
 					}
 		      	} else if ( i == 6 ) {	//!lower row, right
 		    		if (disablelabel[6] == false) {
-		    			Coloring(dc,i,fieldValue[i],"130,217,108,019");
+		    			Coloring(dc,i,fieldValue[i],"130,217,108,020");
 					}
 		    	}
 		    }       	
 		} else if (mySettings.screenWidth == 280 and mySettings.screenHeight == 280) {     //! Fenix 6x pro labels
-			for (var i = 1; i < 7; ++i) {
+			for (i = 1; i < 7; ++i) {
 			   	if ( i == 1 ) {			//!upper row, left    	
 					if (disablelabel[1] == false) {
-						Coloring(dc,i,fieldValue[i],"021,034,117,020");
+						Coloring(dc,i,fieldValue[i],"021,034,118,021");
 					}	    
 			   	} else if ( i == 2 ) {	//!upper row, right
 					if (disablelabel[2] == false) {
-						Coloring(dc,i,fieldValue[i],"140,034,117,020");
+						Coloring(dc,i,fieldValue[i],"140,034,117,021");
 					}
 		       	} else if ( i == 3 ) {  //!middle row, left
 	    			if (disablelabel[3] == false) {
-						Coloring(dc,i,fieldValue[i],"000,108,019,073");
+						Coloring(dc,i,fieldValue[i],"000,108,019,074");
 					}
 	      		} else if ( i == 4 ) {  //!middle row, right
 					if (disablelabel[4] == false) {
-						Coloring(dc,i,fieldValue[i],"192,108,090,020");
+						Coloring(dc,i,fieldValue[i],"192,108,090,021");
 					}	
 			   	} else if ( i == 5 ) {	//!lower row, left
 					if (disablelabel[5] == false) {
-						Coloring(dc,i,fieldValue[i],"021,235,117,020");
+						Coloring(dc,i,fieldValue[i],"021,235,118,021");
 					}
 				} else if ( i == 6 ) {	//!lower row, right	
 					if (disablelabel[6] == false) {
-						Coloring(dc,i,fieldValue[i],"140,235,117,020");
+						Coloring(dc,i,fieldValue[i],"140,235,117,021");
+					}	
+		    	}
+		    }       	
+		} else if (mySettings.screenWidth == 416 and mySettings.screenHeight == 416) {     //! Epix 2 labels
+			for (i = 1; i < 7; ++i) {
+			   	if ( i == 1 ) {			//!upper row, left    	
+					if (disablelabel[1] == false) {
+						Coloring(dc,i,fieldValue[i],"031,051,176,030");
+					}	    
+			   	} else if ( i == 2 ) {	//!upper row, right
+					if (disablelabel[2] == false) {
+						Coloring(dc,i,fieldValue[i],"208,051,174,030");
+					}
+		       	} else if ( i == 3 ) {  //!middle row, left
+	    			if (disablelabel[3] == false) {
+						Coloring(dc,i,fieldValue[i],"000,160,028,108");
+					}
+	      		} else if ( i == 4 ) {  //!middle row, right
+					if (disablelabel[4] == false) {
+						Coloring(dc,i,fieldValue[i],"285,160,134,030");
+					}	
+			   	} else if ( i == 5 ) {	//!lower row, left
+					if (disablelabel[5] == false) {
+						Coloring(dc,i,fieldValue[i],"031,349,176,030");
+					}
+				} else if ( i == 6 ) {	//!lower row, right	
+					if (disablelabel[6] == false) {
+						Coloring(dc,i,fieldValue[i],"208,349,174,030");
 					}	
 		    	}
 		    }       	
 		} else {
-			for (var i = 1; i < 7; ++i) {
+			for (i = 1; i < 7; ++i) {
 			   	if ( i == 1 ) {			//!upper row, left    	
 	    			if (disablelabel[1] == false) {
-						Coloring(dc,i,fieldValue[i],"018,029,100,019");
+						Coloring(dc,i,fieldValue[i],"018,029,101,020");
 					}
 		   		} else if ( i == 2 ) {	//!upper row, right
 			   		if (disablelabel[2] == false) {
-						Coloring(dc,i,fieldValue[i],"120,029,100,019");
+						Coloring(dc,i,fieldValue[i],"120,029,100,020");
 					}
 		       	} else if ( i == 3 ) {  //!middle row, left
 	    			if (disablelabel[3] == false) {
@@ -570,15 +820,15 @@ class ExtramemView extends DatarunpremiumView {
 					}
 	      		} else if ( i == 4 ) {  //!middle row, right
 		    		if (disablelabel[4] == false) {
-						Coloring(dc,i,fieldValue[i],"165,093,077,019");
+						Coloring(dc,i,fieldValue[i],"165,093,077,020");
 					}
 			   	} else if ( i == 5 ) {	//!lower row, left
 			   		if (disablelabel[5] == false) {
-						Coloring(dc,i,fieldValue[i],"018,199,100,019");
+						Coloring(dc,i,fieldValue[i],"018,199,101,020");
 					}
 	      		} else if ( i == 6 ) {	//!lower row, right
 		    		if (disablelabel[6] == false) {
-						Coloring(dc,i,fieldValue[i],"120,199,100,019");
+						Coloring(dc,i,fieldValue[i],"120,199,100,020");
 					}
 		    	}
 		    }       	
@@ -595,6 +845,9 @@ class ExtramemView extends DatarunpremiumView {
 			} else if (mySettings.screenWidth == 280 and mySettings.screenHeight == 280) {
 				 dc.drawText(123, -2, Graphics.FONT_MEDIUM, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
 				 dc.drawText(160, -1, Graphics.FONT_XTINY, "lap", Graphics.TEXT_JUSTIFY_CENTER);		
+			} else if (mySettings.screenWidth == 416 and mySettings.screenHeight == 416) {
+				 dc.drawText(183, -4, Graphics.FONT_MEDIUM, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
+				 dc.drawText(238, -2, Graphics.FONT_XTINY, "lap", Graphics.TEXT_JUSTIFY_CENTER);		
 			} else {	
 				 dc.drawText(103, -4, Graphics.FONT_MEDIUM, mLaps, Graphics.TEXT_JUSTIFY_CENTER);
 				 dc.drawText(140, -1, Graphics.FONT_XTINY, "lap", Graphics.TEXT_JUSTIFY_CENTER);
@@ -613,6 +866,8 @@ class ExtramemView extends DatarunpremiumView {
 				dc.drawText(140, -3, Graphics.FONT_MEDIUM, strTime, Graphics.TEXT_JUSTIFY_CENTER);
 	    	} else if (mySettings.screenWidth == 280 and mySettings.screenHeight == 280) {
 				dc.drawText(150, -2, Graphics.FONT_MEDIUM, strTime, Graphics.TEXT_JUSTIFY_CENTER);
+	    	} else if (mySettings.screenWidth == 416 and mySettings.screenHeight == 416) {
+				dc.drawText(223, 0, Graphics.FONT_MEDIUM, strTime, Graphics.TEXT_JUSTIFY_CENTER);
 	    	} else {
 				dc.drawText(130, -4, Graphics.FONT_MEDIUM, strTime, Graphics.TEXT_JUSTIFY_CENTER);
 			}
@@ -651,7 +906,9 @@ class ExtramemView extends DatarunpremiumView {
 	    	if (mySettings.screenWidth == 260 and mySettings.screenHeight == 260) {
 	    	   	dc.drawText(130, 14, Graphics.FONT_MEDIUM, CFMValue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 	    	} else if (mySettings.screenWidth == 280 and mySettings.screenHeight == 280) {
-	    	   	dc.drawText(140, 15, Graphics.FONT_MEDIUM, CFMValue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+	    	   	dc.drawText(140, 16, Graphics.FONT_MEDIUM, CFMValue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+	       	} else if (mySettings.screenWidth == 416 and mySettings.screenHeight == 416) {
+	    	   	dc.drawText(208, 25, Graphics.FONT_MEDIUM, CFMValue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 	       	} else {
 		       	dc.drawText(120, 13, Graphics.FONT_MEDIUM, CFMValue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
     	    }

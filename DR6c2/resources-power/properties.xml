@@ -26,9 +26,7 @@
 
 	
   <strings>
-    <string id="AppName">Datarun premium with 6 metrics, copy 2 version</string>
-    <string id="AppVersion">2.33c</string>
-    <string id="lDummysetting4version">Version 2.33c of Datarun premium with 6 metrics, copy 2 version (dummy setting)</string>
+    <string id="lDummysetting4version">Version 2.46b of Datarun premium with 6 metrics, copy 2 version (dummy setting)</string>
 	<string id="lTimeMenu">___Time items___</string>
 	<string id="lDistanceMenu">___Distance items___</string>
 	<string id="lPaceMenu">___Pace items___</string>
@@ -96,7 +94,6 @@
     <string id="lAPower">Average running power</string>
 	<string id="lLPower">Current lap running power</string>
 	<string id="lLLPower">Last lap running power</string>
-	<string id="lCCnumber">C-Code generated on the watch by the corresponding main Datarun premium datafield</string>
 	<string id="lShowRedClock">Show red clock over all metrics before the start of an activity (useful for a race when the normal clock isn't visible)</string>
  </strings>
 
@@ -112,10 +109,10 @@
     </setting>
     <setting propertyKey="@Properties.myNumber" title="@Strings.MyNumberTitle">
         <settingConfig type="numeric" errorMessage="@Strings.MyNumberError" />
-    </setting>  
+    </setting>
     <setting propertyKey="@Properties.pCCnumber" title="@Strings.lCCnumber">
         <settingConfig type="numeric" errorMessage="@Strings.MyNumberError" />
-    </setting>
+    </setting>  
     <setting propertyKey="@Properties.pRoundedPace" title="@Strings.lRoundedPace">
       <settingConfig type="boolean" required="true" />
     </setting>

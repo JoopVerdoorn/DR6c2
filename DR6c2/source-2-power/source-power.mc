@@ -16,6 +16,8 @@ class PowerView extends CiqView {
     var overruleWourkout						= false;
     hidden var mPowerWarningunder				= 0;
     hidden var mPowerWarningupper 				= 999;
+    hidden var VibrateLowRequired 				= false;
+    hidden var VibrateHighRequired 				= false;
         
     function initialize() {
         CiqView.initialize();
@@ -76,9 +78,7 @@ class PowerView extends CiqView {
         	}
         }
 
-		var vibrateData = [
-			new Attention.VibeProfile( 100, 200 )
-		];
+
 		
 		var runalertPower = 0;
 		if ( uLapPwr4alerts == 0 ) {
@@ -104,25 +104,19 @@ class PowerView extends CiqView {
 			 	vibrateseconds = vibrateseconds + 1;	 		  			
     			if (runalertPower>mPowerWarningupper) {
     				if (vibrateseconds == uWarningFreq) {
-    					Toybox.Attention.vibrate(vibrateData);
-    					if (uAlertbeep == true) {
-    						Attention.playTone(Attention.TONE_ALERT_HI);
-    					}
-    					Toybox.Attention.vibrate(vibrateData);
+    					VibrateHighRequired = true;
     					vibrateseconds = 0;
     				}
-    			} else if (runalertPower<mPowerWarningunder){
+    			} else if (runalertPower<mPowerWarningunder){    				    				
     				if (vibrateseconds == uWarningFreq) {
-    						if (uAlertbeep == true) {
-    							Attention.playTone(Attention.TONE_ALERT_LO);
-    						}
-    					Toybox.Attention.vibrate(vibrateData);
+    					VibrateLowRequired = true;
     					vibrateseconds = 0;
     				}
     			} 
 			 }
 		  }	 
 		}		
+		
 		var i = 0; 
 	    for (i = 1; i < 7; ++i) {	    
         	if (metric[i] == 20) {

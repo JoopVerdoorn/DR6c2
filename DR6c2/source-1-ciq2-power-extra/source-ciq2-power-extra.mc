@@ -32,7 +32,6 @@ class CiqView extends ExtramemView {
     var uFTPHumid 							= 70;
     var uRealAltitude 						= 2;
     var uFTPAltitude 						= 200;
-    var workoutTarget 						;
     hidden var hasWorkoutStep 				= false;
     hidden var WorkoutStepLowBoundary		= 0;
     hidden var WorkoutStepHighBoundary		= 999;
@@ -40,11 +39,7 @@ class CiqView extends ExtramemView {
     var AveragePower						= 0;
     var WorkoutStepNr						= 0;
     var WorkoutStepDuration 				= 0; 
-    var StartTimeNewStep					= 0;
     var StartDistanceNewStep				= 0;
-    var RemainingWorkoutTime  				= 0;
-    var RemainingWorkoutDistance			= 0;
-    var WorkoutStepDurationType  			= 9;
     hidden var AveragePower3sec  	 		= 0;
     hidden var AveragePower5sec  	 		= 0;
     hidden var AveragePower10sec  	 		= 0;
@@ -52,6 +47,17 @@ class CiqView extends ExtramemView {
     var uFontalertColorLow					= 5;
     hidden var mFontalertColorHigh			= Graphics.COLOR_PURPLE;
     var uFontalertColorHigh					= 4;
+    hidden var TotalVertSpeedinmpersec 		= 0;
+    hidden var calculateVertGrade           = false;
+	var DistforGrade                        = new[303];
+	var ElevforGrade                        = new[303];
+	var Vertgrade                           = 0;
+	var stopiteration                       = false;
+	var uVertgradeDist                      = 0.1;
+	var Vertgradsmooth  	        		= new[6]; 
+	var uLabelfontbig 						= true;
+	var Labelfont							= Graphics.FONT_TINY;
+    
             		            				
     function initialize() {
         ExtramemView.initialize();
@@ -64,7 +70,7 @@ class CiqView extends ExtramemView {
 		uCP		 	 	 = mApp.getProperty("pCP");
 		uWeight			 = mApp.getProperty("pWeight");
 		uPowerTarget	 = mApp.getProperty("pPowerTarget");
-		uOnlyPwrCorrFactor= mApp.getProperty("pOnlyPwrCorrFactor");
+		uOnlyPwrCorrFactor = mApp.getProperty("pOnlyPwrCorrFactor");
 		uPwrTempcorrect	 = mApp.getProperty("pPwrTempcorrect");
 		uFTPTemp	 	 = mApp.getProperty("pFTPTemp");
 		uManTemp	 	 = mApp.getProperty("pManTemp");
@@ -76,9 +82,19 @@ class CiqView extends ExtramemView {
     	uFTPAltitude	 = mApp.getProperty("pFTPAltitude");
     	uFontalertColorLow = mApp.getProperty("pFontalertColorLow");
     	uFontalertColorHigh = mApp.getProperty("pFontalertColorHigh");
+    	uVertgradeDist   = mApp.getProperty("pVertgradeDist");
+    	uLabelfontbig    = mApp.getProperty("pLabelfontbig");
+
+        uVertgradeDist = (uVertgradeDist<50) ? 0.050 : uVertgradeDist;
 	
 		uRealHumid = (uRealHumid != 0 ) ? uRealHumid : 1;
 		uFTPHumid = (uFTPHumid != 0 ) ? uFTPHumid : 1;
+		
+		if (uLabelfontbig == true) {
+			Labelfont = Graphics.FONT_TINY;
+		} else {
+			Labelfont = Graphics.FONT_XTINY;
+		}
 
 		//! Choose fontcolor for alert when power value is under or above powerzone
         if ( uFontalertColorLow == 0 ) {
@@ -122,6 +138,15 @@ class CiqView extends ExtramemView {
 			uManTemp = (uManTemp-32)/1.8;
 		}
 		
+		for (i = 1; i < 301; ++i) {
+		    DistforGrade[i] = 0;
+		    ElevforGrade[i] = 0;
+		}
+		
+		for (i = 1; i < 6; ++i) {
+		    Vertgradsmooth[i] = 0;
+		}
+		
 		i = 0; 
 	    for (i = 1; i < 8; ++i) {		
 			if (metric[i] == 57 or metric[i] == 58 or metric[i] == 59) {
@@ -129,16 +154,28 @@ class CiqView extends ExtramemView {
 			}
 		}
 		i = 0;	
-		for (i = 1; i < 11; ++i) {
+		for (i = 1; i < 7; ++i) {
 			Power[i] = 0;
+		}
+		
+		for (i = 1; i < 7; ++i) {
+	    	if (metric[i] == 131) {
+				calculateVertGrade = true; //!Only calculate vertical grade if needed
+			}
 		}
 				
 		if (mySettings.screenWidth == 260 and mySettings.screenHeight == 260) {
 			Garminfont = Ui.loadResource(Rez.Fonts.Garmin2);
+			Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin6);
 		} else if (mySettings.screenWidth == 280 and mySettings.screenHeight == 280) {
 			Garminfont = Ui.loadResource(Rez.Fonts.Garmin3);
+			Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin7);
+		} else if (mySettings.screenWidth == 416 and mySettings.screenHeight == 416) {
+			Garminfont = Ui.loadResource(Rez.Fonts.Garmin4);
+			Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin8);
 		} else {
 			Garminfont = Ui.loadResource(Rez.Fonts.Garmin1);
+			Garminfontgroot = Ui.loadResource(Rez.Fonts.Garmin5);
 		}	
 		WorkoutStepNr = 0;
     }
@@ -151,15 +188,78 @@ class CiqView extends ExtramemView {
              Attention.backlight(true);
         }
 		//! We only do some calculations if the timer is running
+		startTime = (jTimertime == 0) ? Toybox.System.getClockTime() : startTime;
+		
+		//! Calculating vertical grade
+        var k;
+	    if (calculateVertGrade == true) {
+   				for (k = 1; k < 300; ++k) {			
+					DistforGrade[301-k] = DistforGrade[300-k];
+					ElevforGrade[301-k] = ElevforGrade[300-k];
+				}
+				DistforGrade[1]	= (info.elapsedDistance != null) ? info.elapsedDistance : 0;	
+				ElevforGrade[1] = (info.altitude != null) ? info.altitude : 0;
+				stopiteration = false;
+				for (k = 1; k < 301; ++k) {
+					if ((DistforGrade[1] - DistforGrade[k])>(uVertgradeDist)) {
+					   if (stopiteration == false) {
+					       Vertgrade=100*(ElevforGrade[1]-ElevforGrade[k])/(DistforGrade[1]-DistforGrade[k]);
+					       stopiteration = true;
+					   }
+					}
+				}
+		}
+
+        //!Smoothing of vertical grade over 5 seonds
+        Vertgradsmooth[5] 								= Vertgradsmooth[4];
+        Vertgradsmooth[4] 								= Vertgradsmooth[3];
+        Vertgradsmooth[3] 								= Vertgradsmooth[2];
+        Vertgradsmooth[2] 								= Vertgradsmooth[1];
+		Vertgradsmooth[1]								= Vertgrade; 
+        Vertgradsmoothed = (Vertgradsmooth[1]+Vertgradsmooth[2]+Vertgradsmooth[3]+Vertgradsmooth[4]+Vertgradsmooth[5])/5;
+        
 		if (mTimerRunning) {  
+	        //! Calculate lap time
+    	    mLapTimerTime = jTimertime - mLastLapTimeMarker;	
+			
 			jTimertime 		 = jTimertime + 1;
+			
 			//!Calculate lapheartrate
             mHeartrateTime	 = (info.currentHeartRate != null) ? mHeartrateTime+1 : mHeartrateTime;				
            	mElapsedHeartrate= (info.currentHeartRate != null) ? mElapsedHeartrate + info.currentHeartRate : mElapsedHeartrate;
            	
            	//!Calculate lapCadence
             mCadenceTime	 = (info.currentCadence != null) ? mCadenceTime+1 : mCadenceTime;
-            mElapsedCadence= (info.currentCadence != null) ? mElapsedCadence + info.currentCadence : mElapsedCadence;
+            if (ucadenceWorkaround == true ) { //! workaround multiply by two for FR945LTE and Fenix 6 series
+            	mElapsedCadence= (info.currentCadence != null) ? mElapsedCadence + info.currentCadence*2 : mElapsedCadence;
+            } else {
+            	mElapsedCadence= (info.currentCadence != null) ? mElapsedCadence + info.currentCadence : mElapsedCadence;
+            }
+            
+            //! Calculate vertical speed
+    	    valueDesc = (info.totalDescent != null) ? info.totalDescent : 0;
+        	Diff1 = valueDesc - valueDesclast;
+    	    valueAsc = (info.totalAscent != null) ? info.totalAscent : 0;
+        	Diff2 = valueAsc - valueAsclast;        
+    	    valueDesclast = valueDesc;
+        	valueAsclast = valueAsc;
+	        CurrentVertSpeedinmpersec = Diff2-Diff1;
+	        TotalVertSpeedinmpersec = TotalVertSpeedinmpersec + CurrentVertSpeedinmpersec;
+    	    for (i = 1; i < 7; ++i) {
+	    	    if (metric[i] == 67 or metric[i] == 108) {
+					for (var j = 1; j < 30; ++j) {			
+						VertPace[31-j] = VertPace[30-j];
+					}
+					VertPace[1]	= CurrentVertSpeedinmpersec;
+					for (var j = 1; j < 31; ++j) {
+						totalVertPace = VertPace[j] + totalVertPace;
+					}
+					if (jTimertime>0) {		
+						AverageVertspeedinmper30sec= (jTimertime<31) ? totalVertPace/jTimertime : totalVertPace/30;
+						totalVertPace = 0;
+					}
+				}
+			}
   
             //! Calculate temperature compensation, B-variables reference cell number from cells of conversion excelsheet  		
             var B6 = 22; 			//! is cell B6
@@ -271,7 +371,136 @@ class CiqView extends ExtramemView {
 					}      
 					PwrCorrFactor = 1- (B24 - B25) - (B39-B38)/100;
 				}
+				
+				if (dynamics != null) {
+		 		    var data = dynamics.getRunningDynamics(); 
+		 		    if (data != null) {
+		    			groundContactBalance = data.groundContactBalance;
+    					groundContactTime = data.groundContactTime;  
+    					stanceTime = data.stanceTime;
+    					stepLength = data.stepLength;
+    					verticalOscillation = data.verticalOscillation;
+    					verticalRatio = data.verticalRatio;
+	    			} else {
+    					groundContactBalance = 0;
+    					groundContactTime = 0;  
+    					stanceTime = 0;
+    					stepLength = 0;
+    					verticalOscillation = 0;
+	    				verticalRatio = 0;
+    				}
+    			} else {
+    				groundContactBalance = 0;
+   					groundContactTime = 0;  
+	   				stanceTime = 0;
+   					stepLength = 0;
+   					verticalOscillation = 0;
+   					verticalRatio = 0;
+    			}
+
+        		for (i = 1; i < 7; ++i) {
+        			if (metric[i] == 109) {  
+        				rollgroundContactBalance[10] 								= rollgroundContactBalance[9];
+	            		rollgroundContactBalance[9] 								= rollgroundContactBalance[8];
+    	        		rollgroundContactBalance[8] 								= rollgroundContactBalance[7];
+        		    	rollgroundContactBalance[7] 								= rollgroundContactBalance[6];
+        			    rollgroundContactBalance[6] 								= rollgroundContactBalance[5];
+	        			rollgroundContactBalance[5] 								= rollgroundContactBalance[4];
+ 			       		rollgroundContactBalance[4] 								= rollgroundContactBalance[3];
+        				rollgroundContactBalance[3] 								= rollgroundContactBalance[2];
+        				rollgroundContactBalance[2] 								= rollgroundContactBalance[1];
+        				rollgroundContactBalance[1] 								= groundContactBalance;
+						AveragerollgroundContactBalance10sec	= (rollgroundContactBalance[1]+rollgroundContactBalance[2]+rollgroundContactBalance[3]+rollgroundContactBalance[4]+rollgroundContactBalance[5]+rollgroundContactBalance[6]+rollgroundContactBalance[7]+rollgroundContactBalance[8]+rollgroundContactBalance[9]+rollgroundContactBalance[10])/10;
+	    			}
+    				if (metric[i] == 110) {
+    					rollgroundContactTime[10] 						= rollgroundContactTime[9];
+	        			rollgroundContactTime[9] 						= rollgroundContactTime[8];
+    	    			rollgroundContactTime[8] 						= rollgroundContactTime[7];
+        				rollgroundContactTime[7] 						= rollgroundContactTime[6];
+	        			rollgroundContactTime[6] 						= rollgroundContactTime[5];
+	        			rollgroundContactTime[5] 						= rollgroundContactTime[4];
+ 			       		rollgroundContactTime[4] 						= rollgroundContactTime[3];
+        				rollgroundContactTime[3] 						= rollgroundContactTime[2];
+        				rollgroundContactTime[2] 						= rollgroundContactTime[1];
+        				rollgroundContactTime[1] 						= groundContactTime;
+						AveragerollgroundContactTime10sec	= (rollgroundContactTime[1]+rollgroundContactTime[2]+rollgroundContactTime[3]+rollgroundContactTime[4]+rollgroundContactTime[5]+rollgroundContactTime[6]+rollgroundContactTime[7]+rollgroundContactTime[8]+rollgroundContactTime[9]+rollgroundContactTime[10])/10;	
+	    			}
+	    			if (metric[i] == 111) {
+	    				rollstanceTime[10] 								= rollstanceTime[9];
+		        		rollstanceTime[9] 								= rollstanceTime[8];
+	    	    		rollstanceTime[8] 								= rollstanceTime[7];
+    	    			rollstanceTime[7] 								= rollstanceTime[6];
+        				rollstanceTime[6] 								= rollstanceTime[5];
+        				rollstanceTime[5] 								= rollstanceTime[4];
+ 		       			rollstanceTime[4] 								= rollstanceTime[3];
+        				rollstanceTime[3] 								= rollstanceTime[2];
+	        			rollstanceTime[2] 								= rollstanceTime[1];
+    	    			rollstanceTime[1] 								= stanceTime;
+						AveragerollstanceTime10sec	= (rollstanceTime[1]+rollstanceTime[2]+rollstanceTime[3]+rollstanceTime[4]+rollstanceTime[5]+rollstanceTime[6]+rollstanceTime[7]+rollstanceTime[8]+rollstanceTime[9]+rollstanceTime[10])/10;
+    				}
+    				if (metric[i] == 113) {
+	    				rollstepLength[10] 								= rollstepLength[9];
+		        		rollstepLength[9] 								= rollstepLength[8];
+    		    		rollstepLength[8] 								= rollstepLength[7];
+        				rollstepLength[7] 								= rollstepLength[6];
+        				rollstepLength[6] 								= rollstepLength[5];
+        				rollstepLength[5] 								= rollstepLength[4];
+	 		       		rollstepLength[4] 								= rollstepLength[3];
+    	    			rollstepLength[3] 								= rollstepLength[2];
+        				rollstepLength[2] 								= rollstepLength[1];
+        				rollstepLength[1] 								= stepLength;
+						AveragerollstepLength10sec	= (rollstepLength[1]+rollstepLength[2]+rollstepLength[3]+rollstepLength[4]+rollstepLength[5]+rollstepLength[6]+rollstepLength[7]+rollstepLength[8]+rollstepLength[9]+rollstepLength[10])/10; 
+    				}
+	    			if (metric[i] == 114) { 
+    					rollverticalOscillation[10] 					= rollverticalOscillation[9];
+	    	    		rollverticalOscillation[9] 						= rollverticalOscillation[8];
+    	    			rollverticalOscillation[8] 						= rollverticalOscillation[7];
+        				rollverticalOscillation[7] 						= rollverticalOscillation[6];
+        				rollverticalOscillation[6] 						= rollverticalOscillation[5];
+	        			rollverticalOscillation[5] 						= rollverticalOscillation[4];
+ 			       		rollverticalOscillation[4] 						= rollverticalOscillation[3];
+        				rollverticalOscillation[3] 						= rollverticalOscillation[2];
+        				rollverticalOscillation[2] 						= rollverticalOscillation[1];
+        				rollverticalOscillation[1] 						= verticalOscillation;
+						AveragerollverticalOscillation10sec	= (rollverticalOscillation[1]+rollverticalOscillation[2]+rollverticalOscillation[3]+rollverticalOscillation[4]+rollverticalOscillation[5]+rollverticalOscillation[6]+rollverticalOscillation[7]+rollverticalOscillation[8]+rollverticalOscillation[9]+rollverticalOscillation[10])/10;
+    				}
+	    			if (metric[i] == 115) {
+    					rollverticalRatio[10] 							= rollverticalRatio[9];
+	    	    		rollverticalRatio[9] 							= rollverticalRatio[8];
+    	    			rollverticalRatio[8] 							= rollverticalRatio[7];
+        				rollverticalRatio[7] 							= rollverticalRatio[6];
+        				rollverticalRatio[6] 							= rollverticalRatio[5];
+	        			rollverticalRatio[5] 							= rollverticalRatio[4];
+ 			       		rollverticalRatio[4] 							= rollverticalRatio[3];
+        				rollverticalRatio[3] 							= rollverticalRatio[2];
+        				rollverticalRatio[2] 							= rollverticalRatio[1];
+        				rollverticalRatio[1] 							= verticalRatio;
+						AveragerollverticalRatio10sec	= (rollverticalRatio[1]+rollverticalRatio[2]+rollverticalRatio[3]+rollverticalRatio[4]+rollverticalRatio[5]+rollverticalRatio[6]+rollverticalRatio[7]+rollverticalRatio[8]+rollverticalRatio[9]+rollverticalRatio[10])/10;
+					}
+				}
 			}
+
+		
+			var vibrateData = [
+				new Attention.VibeProfile( 100, 200 )
+			];
+					
+			if (VibrateHighRequired == true) {
+    			Toybox.Attention.vibrate(vibrateData);
+    			if (uAlertbeep == true) {
+    				Attention.playTone(Attention.TONE_ALERT_HI);
+    			}
+    			Toybox.Attention.vibrate(vibrateData);
+    			VibrateHighRequired = false;
+    		}
+    		
+    		if (VibrateLowRequired == true) {
+    			if (uAlertbeep == true) {
+    				Attention.playTone(Attention.TONE_ALERT_LO);
+    			}
+    			Toybox.Attention.vibrate(vibrateData);
+    			VibrateLowRequired = false;
+    		}
            	
             //!Calculate lappower
             mPowerTime		 = (info.currentPower != null and mTimerRunning) ? mPowerTime+1 : mPowerTime;
@@ -281,7 +510,7 @@ class CiqView extends ExtramemView {
             	runPower 		 = (info.currentPower != null) ? info.currentPower : 0;
             }
 			mElapsedPower    = (mTimerRunning) ? mElapsedPower + runPower : mElapsedPower;
-			
+        				
 			if (uCP != 0) {
 				if ((runPower+0.001)/uCP < 0.5 ) {
 					RSS = RSS + 0.0026516504294491;
@@ -536,7 +765,7 @@ class CiqView extends ExtramemView {
             	fieldFormat[i] = "power";
 			} else if (metric[i] == 37) {
 	            fieldValue[i] = Averagepowerpersec;
-    	        fieldLabel[i] = "Pw ..sec";
+    	        fieldLabel[i] = "Pw " + rolavPowmaxsecs + "s";
         	    fieldFormat[i] = "power";
 			} else if (metric[i] == 57) {
 	            fieldValue[i] = mNormalizedPow;
@@ -584,7 +813,7 @@ class CiqView extends ExtramemView {
         	    fieldFormat[i] = "2decimal";
 			} else if (metric[i] == 59) {
 	            fieldValue[i] = mTTS;
-    	        fieldLabel[i] = "TTS";
+    	        fieldLabel[i] = "TSS";
         	    fieldFormat[i] = "0decimal";
 			} else if (metric[i] == 60) {
 	            fieldValue[i] = RSS;
@@ -690,7 +919,11 @@ class CiqView extends ExtramemView {
         			fieldLabel[i] = "No workout";
         	    	fieldFormat[i] = "0decimal";
         		}
-        	}
+        	} else if (metric[i] == 131) {
+           		fieldValue[i] = Vertgradsmoothed;
+            	fieldLabel[i] = "V grade";
+            	fieldFormat[i] = "1decimal";
+			}
         	//!einde invullen field metrics
 		}
 		
@@ -801,6 +1034,15 @@ class CiqView extends ExtramemView {
         	Temp = (fieldvalue != 0 ) ? (fieldvalue).toLong() : 0;
         	fieldvalue = (Temp /60000 % 60).format("%02d") + ":" + (Temp /1000 % 60).format("%02d");
         }
+        
+        //! Make ETA related metrics green if ETA is as desired or better, otherwise red
+      	if (metric[counter] == 13 or metric[counter] == 14 or metric[counter] == 15) {
+	      	if (mETA < mRacetime) {
+    	    	mColourFont = Graphics.COLOR_GREEN;
+        	} else {
+        		mColourFont = Graphics.COLOR_RED;
+        	}
+        }
     		
 		dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
 		
@@ -826,16 +1068,30 @@ class CiqView extends ExtramemView {
         	} else {
         		dc.drawText(x, y, Garminfont, fieldvalue, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
 			}
-        }        
-        if ( counter != 3) {        
-       		dc.drawText(xl, yl, Graphics.FONT_XTINY,  fieldlabel, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-       	} else {
-       		dc.drawText(xl, yl-36, Graphics.FONT_XTINY,  fieldlabel.substring(0,1) , Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-       		dc.drawText(xl, yl-18, Graphics.FONT_XTINY,  fieldlabel.substring(1,2), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-       		dc.drawText(xl, yl, Graphics.FONT_XTINY,  fieldlabel.substring(2,3), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
-       	}
+        }    
         mColourFont = originalFontcolor;
-		dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
+		dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);    
+        if ( counter != 3) {        
+			dc.drawText(xl, yl, Labelfont,  fieldlabel, Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       	} else {
+       	    if (mySettings.screenWidth == 260) {
+       	    	dc.drawText(xl, yl-40, Labelfont,  fieldlabel.substring(0,1) , Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl-18, Labelfont,  fieldlabel.substring(1,2), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl+4, Labelfont,  fieldlabel.substring(2,3), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		} else if (mySettings.screenWidth == 280) {
+       	    	dc.drawText(xl, yl-43, Labelfont,  fieldlabel.substring(0,1) , Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl-19, Labelfont,  fieldlabel.substring(1,2), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl+4, Labelfont,  fieldlabel.substring(2,3), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		} else if (mySettings.screenWidth == 416) {
+       	    	dc.drawText(xl, yl-64, Labelfont,  fieldlabel.substring(0,1) , Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl-29, Labelfont,  fieldlabel.substring(1,2), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl+6, Labelfont,  fieldlabel.substring(2,3), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		} else {
+       		    dc.drawText(xl, yl-38, Labelfont,  fieldlabel.substring(0,1) , Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl-18, Labelfont,  fieldlabel.substring(1,2), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		    dc.drawText(xl, yl+2, Labelfont,  fieldlabel.substring(2,3), Graphics.TEXT_JUSTIFY_CENTER|Graphics.TEXT_JUSTIFY_VCENTER);
+       		}
+       	}
     }
 
 	function hashfunction(string) {

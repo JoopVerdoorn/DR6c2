@@ -3,8 +3,7 @@ using Toybox.Application as App;
 class CiqView extends DatarunpremiumView {  
     hidden var WorkoutStepLowBoundary		= 0;
     hidden var WorkoutStepHighBoundary		= 999;
-    hidden var is32kBdevice					= true;
-
+    
     function initialize() {
         DatarunpremiumView.initialize();
     }
@@ -107,6 +106,15 @@ class CiqView extends DatarunpremiumView {
         } else if ( fieldformat.equals("timeshort" ) == true  ) {
         	Temp = (fieldvalue != 0 ) ? (fieldvalue).toLong() : 0;
         	fieldvalue = (Temp /60000 % 60).format("%02d") + ":" + (Temp /1000 % 60).format("%02d");
+        }
+        
+        //! Make ETA related metrics green if ETA is as desired or better, otherwise red
+      	if (metric[counter] == 13 or metric[counter] == 14 or metric[counter] == 15) {
+	      	if (mETA < mRacetime) {
+    	    	mColourFont = Graphics.COLOR_GREEN;
+        	} else {
+        		mColourFont = Graphics.COLOR_RED;
+        	}
         }
 
     	dc.setColor(mColourFont, Graphics.COLOR_TRANSPARENT);
